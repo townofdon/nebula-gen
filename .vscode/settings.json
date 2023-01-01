@@ -44,12 +44,13 @@
         "**/*.unity":false,
         "build/":false,
         "Build/":false,
-        "Library/":true,
-        "library/":true,
+        "Library/":false,
+        "library/":false,
         "obj/":true,
         "Obj/":true,
-        "ProjectSettings/":true,
+        "ProjectSettings/":false,
         "temp/":true,
         "Temp/":true
-    }
+    },
+    "omnisharp.useModernNet": false
 }
