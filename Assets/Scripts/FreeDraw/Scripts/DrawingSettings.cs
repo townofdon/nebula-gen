@@ -1,15 +1,21 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 namespace FreeDraw
 {
+
+    public enum PenColorType
+    {
+        White,
+        Black,
+    }
+
     // Helper methods used to set drawing settings
     public class DrawingSettings : MonoBehaviour
     {
         public static bool isCursorOverUI = false;
         public float Transparency = 1f;
+        public Action<PenColorType> OnColorChange;
 
         // Changing pen settings is easy as changing the static properties Drawable.Pen_Colour and Drawable.Pen_Width
         public void SetMarkerColour(Color new_color)
@@ -70,6 +76,7 @@ namespace FreeDraw
             c.a = Transparency;
             SetMarkerColour(c);
             Drawable.drawable.SetPenBrush();
+            if (OnColorChange != null) OnColorChange(PenColorType.White);
         }
         public void SetMarkerBlack()
         {
@@ -77,6 +84,7 @@ namespace FreeDraw
             c.a = Transparency;
             SetMarkerColour(c);
             Drawable.drawable.SetPenBrush();
+            if (OnColorChange != null) OnColorChange(PenColorType.Black);
         }
 
         public void SetEraser()

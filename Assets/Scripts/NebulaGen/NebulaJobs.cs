@@ -27,6 +27,12 @@ namespace NebulaGen
         Voronoi2,
     }
 
+    public enum NormalizationType
+    {
+        Stretch, // stretch min to 0 and max to 1
+        Truncate, // value < min => 0, value > max => 1
+    }
+
     [BurstCompile]
     public struct NativePalette
     {
@@ -52,6 +58,9 @@ namespace NebulaGen
     {
         [UnityEngine.SerializeField] public NoiseType noiseType;
         [UnityEngine.SerializeField] public FBMNoiseMode noiseMode;
+        [UnityEngine.SerializeField] public NormalizationType normType;
+        [UnityEngine.SerializeField][UnityEngine.Range(0, 1)] public float minCutoff;
+        [UnityEngine.SerializeField][UnityEngine.Range(0, 1)] public float maxCutoff;
         [UnityEngine.Space]
         [UnityEngine.Space]
         [UnityEngine.SerializeField][UnityEngine.Range(0.01f, 5f)] public float perlinFactor;
@@ -82,15 +91,11 @@ namespace NebulaGen
     {
         public int width;
         public int height;
+        public float tilingFill;
     }
 
     public static class NebulaJobs
     {
-        public const int MODE_DEFAULT = 0;
-        public const int MODE_TURBULENCE = 1;
-        public const int MODE_RIDGES = 2;
-        public const int MODE_INVERTED = 3;
-
         const float PASS_OFFSET_X_0 = 0f; const float PASS_OFFSET_Y_0 = 0f;
         const float PASS_OFFSET_X_1 = 5.2f; const float PASS_OFFSET_Y_1 = 1.3f;
         const float PASS_OFFSET_X_2 = 1.7f; const float PASS_OFFSET_Y_2 = 9.2f;
@@ -118,13 +123,14 @@ namespace NebulaGen
         {
             [ReadOnly] public NativeArray<float> noiseA;
             [ReadOnly] public NativeArray<float> noiseB;
-            [ReadOnly] public NativeArray<float> noiseC;
+            // [ReadOnly] public NativeArray<float> noiseC;
 
             public NativeArray<float> noise;
 
             public void Execute(int current)
             {
-                noise[current] = noiseA[current] + noiseB[current] + noiseC[current];
+                // noise[current] = noiseA[current] + noiseB[current] + noiseC[current];
+                noise[current] = noiseA[current] + noiseB[current];
             }
         }
 
@@ -166,12 +172,14 @@ namespace NebulaGen
             [ReadOnly] public float blackPoint;
             [ReadOnly] public float highlight1;
             [ReadOnly] public float highlight2;
+            [ReadOnly] public int noiseWidth;
+            [ReadOnly] public int noiseHeight;
 
             public NativeArray<float4> pixels;
 
             public void Execute(int i)
             {
-                float val = noise[i];
+                float val = getValFromNoise(i);
                 int ditherIndex = (i + i / props.width) * enableDithering * (colorMode == ColorMode.PixelArt ? 1 : 0);
                 ditherThreshold = (colorMode == ColorMode.PixelArt ? ditherThreshold : 0f);
                 pixels[i] = new float4(0f, 0f, 0f, 0f);
@@ -191,6 +199,37 @@ namespace NebulaGen
                     pixels[i] = math.lerp(pixels[i], GetLerpedColorByValue(ref paletteHighlight2, val), math.lerp(0f, colorLerps[i].y, highlight2));
                 }
                 // note - alpha will be set on final pass
+            }
+
+            float getValFromNoise(int current)
+            {
+                return noise[current];
+
+                // get x, y for current pixel index
+                int x = current % props.width;
+                int y = current / props.width; // integer division
+                // interpolate between floor and ceiling if noise grid size does not match output texture size
+                float2 resample;
+                resample.x = x * (float)noiseWidth / props.width;
+                resample.y = y * (float)noiseHeight / props.height;
+                float2 lower = math.clamp(math.floor(resample), new float2(0, 0), new float2(noiseWidth - 1, noiseHeight - 1));
+                float2 upper = math.clamp(math.ceil(resample), new float2(0, 0), new float2(noiseWidth - 1, noiseHeight - 1));
+                float noiseLower = noise[GetNoiseIndexFromCoords(lower)];
+                float noiseUpper = noise[GetNoiseIndexFromCoords(upper)];
+                float tx = (resample.x - lower.x) / (upper.x - lower.x);
+                float ty = (resample.y - lower.y) / (upper.y - lower.y);
+                float t = math.clamp((tx + ty) * 0.5f, 0, 1);
+                return math.lerp(noiseLower, noiseUpper, t);
+            }
+
+            int GetNoiseIndexFromCoords(int x, int y)
+            {
+                return math.clamp(x, 0, noiseWidth - 1) + noiseWidth * math.clamp(y, 0, noiseHeight - 1);
+            }
+
+            int GetNoiseIndexFromCoords(float2 coords)
+            {
+                return GetNoiseIndexFromCoords((int)coords.x, (int)coords.y);
             }
 
             // given a value between 0-1, return corresponding palette color
@@ -298,6 +337,15 @@ namespace NebulaGen
                 int y = current / props.width; // integer division
                 (float value, float2 colorLerp) = GetFBMDomainShifted(x, y, props.width, props.height, options);
                 noise[current] = value * options.mixAmount;
+
+                // mix in horizontally, vertically shifted values at edges for seamless tiling
+                (float valueTileH, float2 _) = GetFBMDomainShifted(x + props.width, y, props.width, props.height, options);
+                (float valueTileV, float2 _) = GetFBMDomainShifted(x, y + props.height, props.width, props.height, options);
+                float th = math.max(props.tilingFill - x, 0) / math.max(props.tilingFill, 1);
+                float tv = math.max(props.tilingFill - y, 0) / math.max(props.tilingFill, 1);
+                noise[current] = math.lerp(noise[current], valueTileH, math.clamp(th, 0, 1));
+                noise[current] = math.lerp(noise[current], valueTileV, math.clamp(tv, 0, 1));
+
                 colorLerps[current] = colorLerp * options.mixAmount;
             }
         }
@@ -305,29 +353,56 @@ namespace NebulaGen
         [BurstCompile]
         public struct NormalizeNoise : IJob
         {
-            [ReadOnly] public float minCutoff;
-            [ReadOnly] public float maxCutoff;
+            [ReadOnly] public NoiseOptions options;
 
             public NativeArray<float> noise;
 
             public void Execute()
             {
-                float maxValue = 0f;
-                float minValue = 1f;
-                for (int i = 0; i < noise.Length; i++)
-                {
-                    maxValue = math.max(maxValue, noise[i]);
-                    minValue = math.min(minValue, noise[i]);
-                }
-                for (int i = 0; i < noise.Length; i++)
-                {
-                    noise[i] = math.lerp(0f, 1f, math.clamp(math.unlerp(minValue, maxValue, noise[i]), 0, 1));
-                    noise[i] = noise[i] < minCutoff ? 0f : noise[i];
-                    noise[i] = noise[i] > maxCutoff ? maxCutoff : noise[i];
-                    noise[i] = math.unlerp(minCutoff, maxCutoff, noise[i]);
-                }
+                float min = 1f, max = 0f;
+                float turbulence = 0f, ridges = 0f, inverted = 0f;
 
-                UnityEngine.Debug.Log($"min={minValue} max={maxValue}");
+                float minThreshold = math.select(0f, options.minCutoff, options.normType == NormalizationType.Stretch);
+                float maxThreshold = math.select(1f, options.maxCutoff, options.normType == NormalizationType.Stretch);
+                for (int i = 0; i < noise.Length; i++)
+                {
+                    max = math.max(max, noise[i]);
+                    min = math.min(min, noise[i]);
+                }
+                for (int i = 0; i < noise.Length; i++)
+                {
+                    noise[i] = math.lerp(0f, 1f, math.clamp(math.unlerp(min, max, noise[i]), 0, 1));
+                    // clip noise below min threshold
+                    noise[i] = math.select(noise[i], minThreshold, noise[i] < options.minCutoff);
+                    // clip noise above max threshold
+                    noise[i] = math.select(noise[i], maxThreshold, noise[i] > options.maxCutoff);
+                    // stretch values to 0-1, or truncate based on normalization type (already truncated so do nothing)
+                    noise[i] = math.select(
+                        noise[i],
+                        math.unlerp(options.minCutoff, options.maxCutoff, noise[i]),
+                        options.normType == NormalizationType.Stretch
+                    );
+                    // calc different noise modes
+                    turbulence = math.abs(math.lerp(-1f, 1f, math.clamp(noise[i], 0, 1)));
+                    ridges = 1 - turbulence;
+                    ridges *= ridges;
+                    inverted = 1 - noise[i];
+                    inverted *= inverted;
+                    // this monstrosity
+                    noise[i] = math.select(
+                        math.select(
+                            math.select(
+                                noise[i],
+                                ridges,
+                                options.noiseMode == FBMNoiseMode.Ridges
+                            ),
+                            turbulence,
+                            options.noiseMode == FBMNoiseMode.Turbulence
+                        ),
+                        inverted,
+                        options.noiseMode == FBMNoiseMode.Inverted
+                    );
+                }
             }
         }
 
@@ -504,18 +579,6 @@ namespace NebulaGen
             }
         }
 
-        // [BurstCompile]
-        // public struct GetNearestColor : IJobParallelFor
-        // {
-        //     [ReadOnly] public NativeArray<float4> colors;
-        //     public NativeArray<float4> pixels;
-
-        //     public void Execute(int current)
-        //     {
-        //         pixels[current] = colors[PixelArtUtils.GetClosestColor1(colorList, pixels[current])];
-        //     }
-        // }
-
         // For domain shift algorithm explanation, see: https://iquilezles.org/articles/warp/
         [BurstCompile]
         static (float value, float2 colorLerp) GetFBMDomainShifted(int inputX, int inputY, int width, int height, NoiseOptions options)
@@ -607,29 +670,13 @@ namespace NebulaGen
                 amplitude *= 0.25f;
             }
 
+            amplitude *= math.select(1f, 0.25f, options.noiseType == NoiseType.Voronoi1 || options.noiseType == NoiseType.Voronoi2);
+
             for (int oct = 0; oct < options.octaves; oct++)
             {
-                // sample += Mathf.InverseLerp(options.minCutoff, options.maxCutoff, GetNoise(x, y, frequency, options)) * amplitude;
-                // sample += math.unlerp(options.minCutoff, options.maxCutoff, math.clamp(GetNoise(x, y, frequency, options), 0, 1));
                 sample += math.clamp(GetNoise(x, y, frequency, options), 0, 1) * amplitude;
-                // sample += math.unlerp(options.minCutoff, options.maxCutoff, (GetNoise(x, y, frequency, options))) * amplitude;
                 frequency *= options.lacunarity;
                 amplitude *= options.persistence;
-            }
-            switch (options.noiseMode)
-            {
-                case FBMNoiseMode.Turbulence:
-                    sample = math.abs(math.lerp(-1f, 1f, math.clamp(sample, 0, 1)));
-                    break;
-                case FBMNoiseMode.Ridges:
-                    sample = math.abs(math.lerp(-1f, 1f, math.clamp(sample, 0, 1)));
-                    sample = 1 - sample;
-                    sample *= sample;
-                    break;
-                case FBMNoiseMode.Inverted:
-                    sample = 1 - sample;
-                    sample *= sample;
-                    break;
             }
 
             return sample;
@@ -644,20 +691,19 @@ namespace NebulaGen
         [BurstCompile]
         static float2 GetPassOffset(int index)
         {
-            switch (index % 4)
-            {
-                case 0:
-                    return new float2(PASS_OFFSET_X_0, PASS_OFFSET_Y_0);
-                case 1:
-                    return new float2(PASS_OFFSET_X_1, PASS_OFFSET_Y_1);
-                case 2:
-                    return new float2(PASS_OFFSET_X_2, PASS_OFFSET_Y_2);
-                case 3:
-                    return new float2(PASS_OFFSET_X_3, PASS_OFFSET_Y_3);
-                default:
-                    break;
-            }
-            return new float2(0f, 0f);
+            return math.select(
+                math.select(
+                    math.select(
+                        new float2(PASS_OFFSET_X_3, PASS_OFFSET_Y_3),
+                        new float2(PASS_OFFSET_X_2, PASS_OFFSET_Y_2),
+                        index % 4 == 2
+                    ),
+                    new float2(PASS_OFFSET_X_1, PASS_OFFSET_Y_1),
+                    index % 4 == 1
+                ),
+                new float2(PASS_OFFSET_X_0, PASS_OFFSET_Y_0),
+                index % 4 == 0
+            );
         }
 
         static float GetNoise(float x, float y, float frequency, NoiseOptions options)
@@ -684,28 +730,6 @@ namespace NebulaGen
                     return GetVoronoiNoise(new float2(xCoord * VORONOI_FREQ_MOD, yCoord * VORONOI_FREQ_MOD), options.voronoiAngleOffset, options.voronoiCellDensity).cells;
             }
         }
-
-        // static float GetVoronoiNoise(float2 position) {
-        //     // float voronoiNoise(float2 value){
-        //     float2 baseCell = math.floor(position);
-
-        //     float minDistToCell = 10;
-        //     float2 closestCell;
-        //     for(int x=-1; x<=1; x++){
-        //         for(int y=-1; y<=1; y++){
-        //             float2 cell = baseCell + new float2(x, y);
-        //             float2 cellPosition = cell + rand2dTo2d(cell);
-        //             float2 toCell = cellPosition - position;
-        //             float distToCell = math.length(toCell);
-        //             if(distToCell < minDistToCell){
-        //                 minDistToCell = distToCell;
-        //                 closestCell = cell;
-        //             }
-        //         }
-        //     }
-        //     float random = rand2dTo1d(closestCell);
-        //     return (minDistToCell, random);
-        // }
 
         [BurstCompile]
         static float2 unity_voronoi_noise_randomVector(float2 uv, float offset)

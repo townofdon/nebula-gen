@@ -8,11 +8,17 @@ using UnityEngine.Assertions;
 using UnityEngine.UI;
 
 // TODO
-// - [ ] get old project working
-// - [ ] get min/max noise fnc working (add separate normalize passes)
-// - [ ] add new fancy noise textures
+// - [x] get old project working
+// - [x] get min/max noise fnc working (add separate normalize passes)
+// - [x] add better tiling
+// - [x] resample noise grid to pixels grid
+// - [x] show distinct noise, output textures
+// - [x] hook up drawable functionality
+// - [x] add image download
 // - [ ] add drawable masking
 // - [ ] add camera controls (pan, zoom)
+// - [ ] only generate image on G press
+// - [ ] add new fancy noise textures
 // - [ ] flesh out with scifi UI
 
 namespace NebulaGen
@@ -27,16 +33,19 @@ namespace NebulaGen
     public class Nebula2 : MonoBehaviour, ISerializationCallbackReceiver
     {
         [Header("Refs")]
-        [SerializeField] RawImage outputImage;
+        [SerializeField] RawImage noiseImage;
+        [SerializeField] SpriteRenderer outputSprite;
         [SerializeField][Range(0f, 2f)] float repaintDelay = 0.2f;
 
         [Space]
         [Space]
 
         [Header("Dimensions")]
-        [SerializeField][Range(32, 960)] int sizeX = 480;
-        [SerializeField][Range(32, 960)] int sizeY = 480;
-        [SerializeField][Range(1, 10)] int sizeMod = 1;
+        [SerializeField] int sizeX = 480;
+        [SerializeField] int sizeY = 480;
+
+        const int noiseWidth = 480;
+        const int noiseHeight = 480;
 
         [Space]
         [Space]
@@ -52,8 +61,8 @@ namespace NebulaGen
             voronoiAngleOffset = 0f,
             voronoiCellDensity = 1f,
             octaves = 8,
-            // minCutoff = 0.2f,
-            // maxCutoff = 0.8f,
+            minCutoff = 0f,
+            maxCutoff = 1f,
             initialAmp = 1f,
             initialFreq = 1f,
             persistence = 0.5f,
@@ -69,13 +78,13 @@ namespace NebulaGen
         NoiseOptions noiseLayerB = new NoiseOptions
         {
             noiseMode = FBMNoiseMode.Default,
+            minCutoff = 0f,
+            maxCutoff = 1f,
             perlinFactor = 0.4f,
             perlinOffset = Vector2.one * 25f,
             voronoiAngleOffset = 0f,
             voronoiCellDensity = 1f,
             octaves = 8,
-            // minCutoff = 0.2f,
-            // maxCutoff = 1f,
             initialAmp = 1f,
             initialFreq = 1f,
             persistence = 0.5f,
@@ -87,28 +96,28 @@ namespace NebulaGen
             warpAmount = 0f,
             warpIntensity = 1f,
         };
-        [SerializeField]
-        NoiseOptions noiseLayerC = new NoiseOptions
-        {
-            noiseMode = FBMNoiseMode.Default,
-            perlinFactor = 0.4f,
-            perlinOffset = Vector2.one * 25f,
-            voronoiAngleOffset = 0f,
-            voronoiCellDensity = 1f,
-            octaves = 8,
-            // minCutoff = 0.2f,
-            // maxCutoff = 1f,
-            initialAmp = 1f,
-            initialFreq = 1f,
-            persistence = 0.5f,
-            lacunarity = 2.0f,
-            domainShiftPasses = 0,
-            domainShiftAmount = 10f,
-            swirlAmount = 0f,
-            swirlIntensity = 1f,
-            warpAmount = 0f,
-            warpIntensity = 1f,
-        };
+        // [SerializeField]
+        // NoiseOptions noiseLayerC = new NoiseOptions
+        // {
+        //     noiseMode = FBMNoiseMode.Default,
+        //     // minCutoff = 0.2f,
+        //     // maxCutoff = 1f,
+        //     perlinFactor = 0.4f,
+        //     perlinOffset = Vector2.one * 25f,
+        //     voronoiAngleOffset = 0f,
+        //     voronoiCellDensity = 1f,
+        //     octaves = 8,
+        //     initialAmp = 1f,
+        //     initialFreq = 1f,
+        //     persistence = 0.5f,
+        //     lacunarity = 2.0f,
+        //     domainShiftPasses = 0,
+        //     domainShiftAmount = 10f,
+        //     swirlAmount = 0f,
+        //     swirlIntensity = 1f,
+        //     warpAmount = 0f,
+        //     warpIntensity = 1f,
+        // };
 
         [Header("Mask")]
 
@@ -119,13 +128,13 @@ namespace NebulaGen
         NoiseOptions maskLayerA = new NoiseOptions
         {
             noiseMode = FBMNoiseMode.Default,
+            minCutoff = 0.2f,
+            maxCutoff = 0.8f,
             perlinFactor = .3f,
             perlinOffset = Vector2.one * 5f,
             voronoiAngleOffset = 0f,
             voronoiCellDensity = 1f,
             octaves = 8,
-            // minCutoff = 0.2f,
-            // maxCutoff = 0.8f,
             initialFreq = 1f,
             initialAmp = 1f,
             persistence = 0.5f,
@@ -135,13 +144,13 @@ namespace NebulaGen
         NoiseOptions maskLayerB = new NoiseOptions
         {
             noiseMode = FBMNoiseMode.Default,
+            minCutoff = 0.2f,
+            maxCutoff = 0.8f,
             perlinFactor = .35f,
             perlinOffset = Vector2.one * 10f,
             voronoiAngleOffset = 0f,
             voronoiCellDensity = 1f,
             octaves = 8,
-            // minCutoff = 0.2f,
-            // maxCutoff = 0.8f,
             initialFreq = 1f,
             initialAmp = 1f,
             persistence = 0.5f,
@@ -154,11 +163,11 @@ namespace NebulaGen
         [Header("Mix")]
         [SerializeField][Range(0f, 1f)] float mixNoiseA = 1f;
         [SerializeField][Range(0f, 1f)] float mixNoiseB = 0f;
-        [SerializeField][Range(0f, 1f)] float mixNoiseC = 0F;
+        // [SerializeField][Range(0f, 1f)] float mixNoiseC = 0F;
         [SerializeField][Range(0f, 1f)] float mixMask = 1f;
         [SerializeField] AnimationCurve outputCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
-        [SerializeField][Range(0f, 1f)] float minCutoff = 0f;
-        [SerializeField][Range(0f, 1f)] float maxCutoff = 0f;
+        // [SerializeField][Range(0f, 1f)] float minCutoff = 0f;
+        // [SerializeField][Range(0f, 1f)] float maxCutoff = 0f;
 
         [Space]
         [Space]
@@ -217,6 +226,22 @@ namespace NebulaGen
         bool shouldGenerate;
         float timeElapsedSinceGenerating = float.MaxValue;
 
+        NoiseOptions defaultNoiseOptions = new NoiseOptions
+        {
+            normType = NormalizationType.Truncate,
+            noiseMode = FBMNoiseMode.Default,
+            minCutoff = 0,
+            maxCutoff = 1,
+        };
+
+
+        public void SaveImage()
+        {
+            Debug.Log("Saving...");
+            ImageUtils.SaveImage(outputSprite.sprite.texture as Texture2D);
+            Debug.Log("Save Successful!");
+        }
+
         void Start()
         {
             shouldGenerate = true;
@@ -238,43 +263,47 @@ namespace NebulaGen
         void Generate()
         {
             Calculate();
-            bool didChangeSize = outputImage.texture.width != width || outputImage.texture.height != height;
-            if (didChangeSize || IsDebug())
+
+            if (noiseImage.texture == null || noiseImage.texture.width != noiseWidth || noiseImage.texture.height != noiseHeight)
             {
-                Texture2D texture = GenerateTexture();
-                outputImage.texture = texture;
-                outputImage.SetNativeSize();
+                Texture2D texture = NoiseToTexture2D(_noise);
+                noiseImage.texture = texture;
             }
             else
             {
-                (outputImage.texture as Texture2D).SetPixels(_pixels);
-                (outputImage.texture as Texture2D).Apply();
+                (noiseImage.texture as Texture2D).SetPixels(NoiseToColor(_noise));
+                (noiseImage.texture as Texture2D).Apply();
+            }
+
+            if (outputSprite.sprite == null || outputSprite.sprite.texture.width != width || outputSprite.sprite.texture.height != height)
+            {
+                Texture2D texture = ColorToTexture2D(_pixels);
+                // outputImage.texture = texture;
+
+                Sprite sprite = Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 50f, 0, SpriteMeshType.Tight, Vector4.zero, false);
+                outputSprite.sprite = sprite;
+
+                // outputImage.SetNativeSize();
+                // RectTransform rectTransform = outputImage.GetComponent<RectTransform>();
+                // Rect rect = outputImage.GetComponent<RectTransform>().rect;
+                // rect.width *= 0.01f;
+                // rect.height *= 0.01f;
+            }
+            else
+            {
+                (outputSprite.sprite.texture as Texture2D).SetPixels(_pixels);
+                (outputSprite.sprite.texture as Texture2D).Apply();
             }
             timeElapsedSinceGenerating = 0f;
         }
 
-        bool IsDebug()
-        {
-            return false
-                || debugMasks
-                || debugCompositeNoise;
-        }
-
         void Calculate()
         {
-            width = sizeX * sizeMod;
-            height = sizeY * sizeMod;
+            width = sizeX;
+            height = sizeY;
             CalcNoise();
-            Assert.AreEqual(_noise.Length, width * height);
             CalcPixels();
             Assert.AreEqual(_pixels.Length, width * height);
-        }
-
-        Texture2D GenerateTexture()
-        {
-            if (debugMasks) return NoiseToTexture2D(_maskComposite);
-            if (debugCompositeNoise) return NoiseToTexture2D(_noise);
-            return ColorToTexture2D(_pixels);
         }
 
         void CalcNoise()
@@ -284,17 +313,20 @@ namespace NebulaGen
             InitColorLerps(ref _colorLerps);
             InitPixels(ref _pixels);
 
-            JobProps props = new JobProps();
-            props.width = width;
-            props.height = height;
-            int length = width * height;
+            JobProps props = new JobProps
+            {
+                width = noiseWidth,
+                height = noiseHeight,
+                tilingFill = borderMode == BorderMode.TileMirror ? tilingFill : 0,
+            };
+            int length = noiseWidth * noiseHeight;
 
             NativeArray<float> noise = new NativeArray<float>(length, Allocator.TempJob);
             NativeArray<float> mask = new NativeArray<float>(length, Allocator.TempJob);
 
             NativeArray<float> noiseA = new NativeArray<float>(length, Allocator.TempJob);
             NativeArray<float> noiseB = new NativeArray<float>(length, Allocator.TempJob);
-            NativeArray<float> noiseC = new NativeArray<float>(length, Allocator.TempJob);
+            // NativeArray<float> noiseC = new NativeArray<float>(length, Allocator.TempJob);
             NativeArray<float> mask1 = new NativeArray<float>(length, Allocator.TempJob);
             NativeArray<float> mask2 = new NativeArray<float>(length, Allocator.TempJob);
             NativeArray<float> falloff = new NativeArray<float>(length, Allocator.TempJob);
@@ -303,7 +335,7 @@ namespace NebulaGen
             #region NOISE_CALC
             noiseLayerA.mixAmount = mixNoiseA;
             noiseLayerB.mixAmount = mixNoiseB;
-            noiseLayerC.mixAmount = mixNoiseC;
+            // noiseLayerC.mixAmount = mixNoiseC;
             maskLayerA.mixAmount = 1f;
             maskLayerB.mixAmount = 1f;
             NebulaJobs.CalcNoiseWithColorLerps jobNoiseA = new NebulaJobs.CalcNoiseWithColorLerps
@@ -319,12 +351,12 @@ namespace NebulaGen
                 options = noiseLayerB,
                 props = props,
             };
-            NebulaJobs.CalcNoise jobNoiseC = new NebulaJobs.CalcNoise
-            {
-                noise = noiseC,
-                options = noiseLayerC,
-                props = props,
-            };
+            // NebulaJobs.CalcNoise jobNoiseC = new NebulaJobs.CalcNoise
+            // {
+            //     noise = noiseC,
+            //     options = noiseLayerC,
+            //     props = props,
+            // };
             NebulaJobs.CalcNoise jobMask1 = new NebulaJobs.CalcNoise
             {
                 noise = mask1,
@@ -350,18 +382,35 @@ namespace NebulaGen
             };
             JobHandle handleNoiseA = jobNoiseA.Schedule(length, 1);
             JobHandle handleNoiseB = jobNoiseB.Schedule(length, 1);
-            JobHandle handleNoiseC = jobNoiseC.Schedule(length, 1);
+            // JobHandle handleNoiseC = jobNoiseC.Schedule(length, 1);
             JobHandle handleMask1 = jobMask1.Schedule(length, 1);
             JobHandle handleMask2 = jobMask2.Schedule(length, 1);
             JobHandle handleFalloff = jobFalloff.Schedule(length, 1);
 
             handleNoiseA.Complete();
             handleNoiseB.Complete();
-            handleNoiseC.Complete();
+            // handleNoiseC.Complete();
             handleMask1.Complete();
             handleMask2.Complete();
             handleFalloff.Complete();
             #endregion NOISE_CALC
+
+            #region NORM_PASS_ONE
+            NebulaJobs.NormalizeNoise jobNormNoiseA = new NebulaJobs.NormalizeNoise
+            {
+                noise = noiseA,
+                options = noiseLayerA,
+            };
+            NebulaJobs.NormalizeNoise jobNormNoiseB = new NebulaJobs.NormalizeNoise
+            {
+                noise = noiseB,
+                options = noiseLayerB,
+            };
+            JobHandle handleNormNoiseA = jobNormNoiseA.Schedule();
+            JobHandle handleNormNoiseB = jobNormNoiseB.Schedule();
+            handleNormNoiseA.Complete();
+            handleNormNoiseB.Complete();
+            #endregion NORM_PASS_ONE
 
             #region COMPOSITING
             NebulaJobs.CalcCompositeMask jobCompositeMask = new NebulaJobs.CalcCompositeMask
@@ -376,7 +425,7 @@ namespace NebulaGen
             {
                 noiseA = noiseA,
                 noiseB = noiseB,
-                noiseC = noiseC,
+                // noiseC = noiseC,
                 noise = noise,
             };
             JobHandle handleCompositeMask = jobCompositeMask.Schedule(length, 1);
@@ -389,14 +438,12 @@ namespace NebulaGen
             NebulaJobs.NormalizeNoise jobNormalizeNoise = new NebulaJobs.NormalizeNoise
             {
                 noise = noise,
-                minCutoff = minCutoff,
-                maxCutoff = maxCutoff,
+                options = defaultNoiseOptions
             };
             NebulaJobs.NormalizeNoise jobNormalizeMask = new NebulaJobs.NormalizeNoise
             {
                 noise = mask,
-                minCutoff = 0f,
-                maxCutoff = 1f,
+                options = defaultNoiseOptions
             };
             NebulaJobs.NormalizeColorLerps jobNormalizeColorLerps = new NebulaJobs.NormalizeColorLerps
             {
@@ -420,20 +467,20 @@ namespace NebulaGen
             #endregion SUBTRACTION
 
             #region TILING
-            if (borderMode == BorderMode.TileMirror || borderMode == BorderMode.TileStretch)
-            {
-                NebulaJobs.CalcTiling jobCalcTiling = new NebulaJobs.CalcTiling
-                {
-                    noise = noise,
-                    colorLerps = colorLerps,
-                    props = props,
-                    tilingFill = tilingFill,
-                    amountMirror = borderMode == BorderMode.TileMirror ? 1 : 0,
-                    amountStretch = borderMode == BorderMode.TileStretch ? 1 : 0,
-                };
-                JobHandle handleCalcTiling = jobCalcTiling.Schedule();
-                handleCalcTiling.Complete();
-            }
+            // if (borderMode == BorderMode.TileMirror || borderMode == BorderMode.TileStretch)
+            // {
+            //     NebulaJobs.CalcTiling jobCalcTiling = new NebulaJobs.CalcTiling
+            //     {
+            //         noise = noise,
+            //         colorLerps = colorLerps,
+            //         props = props,
+            //         tilingFill = tilingFill,
+            //         amountMirror = borderMode == BorderMode.TileMirror ? 1 : 0,
+            //         amountStretch = borderMode == BorderMode.TileStretch ? 1 : 0,
+            //     };
+            //     JobHandle handleCalcTiling = jobCalcTiling.Schedule();
+            //     handleCalcTiling.Complete();
+            // }
             #endregion TILING
 
             for (int i = 0; i < length; i++)
@@ -447,7 +494,7 @@ namespace NebulaGen
             mask.Dispose();
             noiseA.Dispose();
             noiseB.Dispose();
-            noiseC.Dispose();
+            // noiseC.Dispose();
             mask1.Dispose();
             mask2.Dispose();
             falloff.Dispose();
@@ -459,7 +506,11 @@ namespace NebulaGen
             int length = width * height;
             Assert.AreEqual(_pixels.Length, length);
             Assert.AreEqual(_noise.Length, length);
-            JobProps props = new JobProps { width = width, height = height };
+            JobProps props = new JobProps
+            {
+                width = width,
+                height = height,
+            };
 
             NativeArray<float> jobNoise = new NativeArray<float>(length, Allocator.TempJob);
             NativeArray<float2> jobColorLerps = new NativeArray<float2>(length, Allocator.TempJob);
@@ -493,6 +544,8 @@ namespace NebulaGen
             {
                 colorMode = colorMode,
                 props = props,
+                noiseWidth = noiseWidth,
+                noiseHeight = noiseHeight,
                 noise = jobNoise,
                 colorLerps = jobColorLerps,
                 paletteMain = jobPaletteMain,
@@ -575,11 +628,11 @@ namespace NebulaGen
 
         void InitNoise(ref float[] noiseArray)
         {
-            if (noiseArray == null || noiseArray.Length != width * height)
+            if (noiseArray == null || noiseArray.Length != noiseWidth * noiseHeight)
             {
-                noiseArray = new float[width * height];
+                noiseArray = new float[noiseWidth * noiseHeight];
             }
-            Assert.AreEqual(noiseArray.Length, width * height);
+            Assert.AreEqual(noiseArray.Length, noiseWidth * noiseHeight);
         }
 
         void InitPixels(ref Color[] pixelsArray)

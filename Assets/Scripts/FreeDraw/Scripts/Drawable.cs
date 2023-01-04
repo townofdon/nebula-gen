@@ -27,18 +27,15 @@ namespace FreeDraw
         public LayerMask Drawing_Layers;
 
         public bool Reset_Canvas_On_Play = true;
-        public bool Save_Output_Image = true;
+
         // The colour the canvas is reset to each time
         public Color Reset_Colour = new Color(0, 0, 0, 0);  // By default, reset the canvas to be transparent
-
-        public RawImage outputImage;
 
         // Used to reference THIS specific file without making all methods static
         public static Drawable drawable;
         // MUST HAVE READ/WRITE enabled set in the file editor of Unity
         Sprite drawable_sprite;
         Texture2D drawable_texture;
-        Texture2D output_texture;
 
         Vector2 previous_drag_position;
         Color[] clean_colours_array;
@@ -291,32 +288,6 @@ namespace FreeDraw
             drawable_texture.Apply();
         }
 
-        public void SaveImage()
-        {
-            if (Save_Output_Image)
-            {
-                Debug.Log("Saving...");
-            }
-            else
-            {
-                Debug.LogWarning("Enable `Save_Output_Image` to save image.");
-            }
-            // Color[] pixels = drawable_texture.GetPixels();
-            // output_texture.SetPixels(pixels);
-            // output_texture.Apply();
-
-            // Nebula2 nebula = FindObjectOfType<Nebula2>();
-            // Texture2D generated = nebula.Generate();
-            // // output_texture.SetPixels(generated);
-            // // output_texture.Apply();
-            // outputImage.texture = generated;
-            if (Save_Output_Image)
-            {
-                ImageUtils.SaveImage(outputImage.texture as Texture2D);
-                Debug.Log("Save Successful!");
-            }
-        }
-
         void Awake()
         {
             drawable = this;
@@ -325,7 +296,6 @@ namespace FreeDraw
 
             drawable_sprite = this.GetComponent<SpriteRenderer>().sprite;
             drawable_texture = drawable_sprite.texture;
-            output_texture = outputImage.texture as Texture2D;
 
             // Initialize clean pixels to use
             clean_colours_array = new Color[(int)drawable_texture.width * (int)drawable_texture.height];
