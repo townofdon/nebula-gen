@@ -101,6 +101,7 @@ namespace NebulaGen
         const float PASS_OFFSET_X_2 = 1.7f; const float PASS_OFFSET_Y_2 = 9.2f;
         const float PASS_OFFSET_X_3 = 8.3f; const float PASS_OFFSET_Y_3 = 2.8f;
         const float VORONOI_FREQ_MOD = 0.1f;
+        const int NOISE_BUFFER = 1000;
 
         [BurstCompile]
         public struct CalcCompositeMask : IJobParallelFor
@@ -179,7 +180,8 @@ namespace NebulaGen
 
             public void Execute(int i)
             {
-                float val = getValFromNoise(i);
+                float val = getResampledNoiseVal(i);
+                float2 colorLerp = getResampledColorLerp(i);
                 int ditherIndex = (i + i / props.width) * enableDithering * (colorMode == ColorMode.PixelArt ? 1 : 0);
                 ditherThreshold = (colorMode == ColorMode.PixelArt ? ditherThreshold : 0f);
                 pixels[i] = new float4(0f, 0f, 0f, 0f);
@@ -187,10 +189,10 @@ namespace NebulaGen
                 if (colorMode == ColorMode.PixelArt)
                 {
                     pixels[i] = GetColorByValue(ref paletteMain, val, ditherIndex, ditherThreshold);
-                    bool isHighlight1 = ((int)math.round(math.lerp(0f, colorLerps[i].x * 0.5f + 0.5f, highlight1 * colorLerps[i].x))) > 0;
-                    bool isHighlight2 = ((int)math.round(math.lerp(0f, colorLerps[i].x * 0.5f + 0.5f, highlight2 * colorLerps[i].x))) > 0;
-                    pixels[i] = isHighlight1 ? GetColorByValue(ref paletteHighlight1, val * colorLerps[i].x, ditherIndex, ditherThreshold) : pixels[i];
-                    pixels[i] = isHighlight2 ? GetColorByValue(ref paletteHighlight2, val * colorLerps[i].y, ditherIndex, ditherThreshold) : pixels[i];
+                    bool isHighlight1 = ((int)math.round(math.lerp(0f, colorLerp.x * 0.5f + 0.5f, highlight1 * colorLerp.x))) > 0;
+                    bool isHighlight2 = ((int)math.round(math.lerp(0f, colorLerp.y * 0.5f + 0.5f, highlight2 * colorLerp.y))) > 0;
+                    pixels[i] = isHighlight1 ? GetColorByValue(ref paletteHighlight1, val * colorLerp.x, ditherIndex, ditherThreshold) : pixels[i];
+                    pixels[i] = isHighlight2 ? GetColorByValue(ref paletteHighlight2, val * colorLerp.y, ditherIndex, ditherThreshold) : pixels[i];
                 }
                 if (colorMode == ColorMode.RGB)
                 {
@@ -201,25 +203,52 @@ namespace NebulaGen
                 // note - alpha will be set on final pass
             }
 
-            float getValFromNoise(int current)
+            float2 getResampledColorLerp(int current)
             {
-                return noise[current];
+                // get x, y for current pixel index
+                int x = current % props.width;
+                int y = current / props.width; // integer division
+                float2 resample;
+                resample.x = x * (float)noiseWidth / (float)props.width;
+                resample.y = y * (float)noiseHeight / (float)props.height;
+                resample = math.floor(resample);
+                return colorLerps[GetNoiseIndexFromCoords(resample)];
+            }
 
+            // noise 10x10
+            // color 20x20
+            // color(0,0) => noise(0,0)
+            // color(5,5) => noise(2,2)
+            // color(10,10) => noise(5,5)
+            // color(15,15) => noise(7,7)
+            // color(20,20) => noise(10,10)
+
+            float getResampledNoiseVal(int current)
+            {
                 // get x, y for current pixel index
                 int x = current % props.width;
                 int y = current / props.width; // integer division
                 // interpolate between floor and ceiling if noise grid size does not match output texture size
                 float2 resample;
-                resample.x = x * (float)noiseWidth / props.width;
-                resample.y = y * (float)noiseHeight / props.height;
-                float2 lower = math.clamp(math.floor(resample), new float2(0, 0), new float2(noiseWidth - 1, noiseHeight - 1));
-                float2 upper = math.clamp(math.ceil(resample), new float2(0, 0), new float2(noiseWidth - 1, noiseHeight - 1));
-                float noiseLower = noise[GetNoiseIndexFromCoords(lower)];
-                float noiseUpper = noise[GetNoiseIndexFromCoords(upper)];
-                float tx = (resample.x - lower.x) / (upper.x - lower.x);
-                float ty = (resample.y - lower.y) / (upper.y - lower.y);
-                float t = math.clamp((tx + ty) * 0.5f, 0, 1);
-                return math.lerp(noiseLower, noiseUpper, t);
+                resample.x = x * (float)noiseWidth / (float)props.width;
+                resample.y = y * (float)noiseHeight / (float)props.height;
+                resample = math.floor(resample);
+                return noise[GetNoiseIndexFromCoords(resample)];
+                // // get x, y for current pixel index
+                // int x = current % props.width;
+                // int y = current / props.width; // integer division
+                // // interpolate between floor and ceiling if noise grid size does not match output texture size
+                // float2 resample;
+                // resample.x = x * (float)noiseWidth / props.width;
+                // resample.y = y * (float)noiseHeight / props.height;
+                // float2 lower = math.clamp(math.floor(resample), new float2(0, 0), new float2(noiseWidth - 1, noiseHeight - 1));
+                // float2 upper = math.clamp(math.ceil(resample), new float2(0, 0), new float2(noiseWidth - 1, noiseHeight - 1));
+                // float noiseLower = noise[GetNoiseIndexFromCoords(lower)];
+                // float noiseUpper = noise[GetNoiseIndexFromCoords(upper)];
+                // float tx = (resample.x - lower.x) / (upper.x - lower.x);
+                // float ty = (resample.y - lower.y) / (upper.y - lower.y);
+                // float t = math.clamp((tx + ty) * 0.5f, 0, 1);
+                // return math.lerp(noiseLower, noiseUpper, t);
             }
 
             int GetNoiseIndexFromCoords(int x, int y)
@@ -341,10 +370,15 @@ namespace NebulaGen
                 // mix in horizontally, vertically shifted values at edges for seamless tiling
                 (float valueTileH, float2 _) = GetFBMDomainShifted(x + props.width, y, props.width, props.height, options);
                 (float valueTileV, float2 _) = GetFBMDomainShifted(x, y + props.height, props.width, props.height, options);
+                (float valueTileC, float2 _) = GetFBMDomainShifted(x + props.width, y + props.height, props.width, props.height, options);
+                float diffh = math.abs(noise[current] - valueTileH);
+                float diffv = math.abs(noise[current] - valueTileV);
                 float th = math.max(props.tilingFill - x, 0) / math.max(props.tilingFill, 1);
                 float tv = math.max(props.tilingFill - y, 0) / math.max(props.tilingFill, 1);
-                noise[current] = math.lerp(noise[current], valueTileH, math.clamp(th, 0, 1));
-                noise[current] = math.lerp(noise[current], valueTileV, math.clamp(tv, 0, 1));
+                float tc = th * tv;
+                noise[current] = math.lerp(noise[current], valueTileH, math.clamp(th - (1 - valueTileV) * tv * diffh, 0, 1));
+                noise[current] = math.lerp(noise[current], valueTileV, math.clamp(tv - (1 - valueTileH) * th * diffh, 0, 1));
+                noise[current] = math.lerp(noise[current], valueTileC, math.clamp(tc, 0, 1));
 
                 colorLerps[current] = colorLerp * options.mixAmount;
             }
@@ -708,8 +742,8 @@ namespace NebulaGen
 
         static float GetNoise(float x, float y, float frequency, NoiseOptions options)
         {
-            float xCoord = options.perlinOffset.x + x * options.perlinFactor * frequency;
-            float yCoord = options.perlinOffset.y + y * options.perlinFactor * frequency;
+            float xCoord = options.perlinOffset.x + x * options.perlinFactor * frequency + NOISE_BUFFER;
+            float yCoord = options.perlinOffset.y + y * options.perlinFactor * frequency + NOISE_BUFFER;
 
             switch (options.noiseType)
             {

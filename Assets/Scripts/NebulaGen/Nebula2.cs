@@ -504,16 +504,16 @@ namespace NebulaGen
         void CalcPixels()
         {
             int length = width * height;
+            int noiseLength = noiseWidth * noiseHeight;
             Assert.AreEqual(_pixels.Length, length);
-            Assert.AreEqual(_noise.Length, length);
             JobProps props = new JobProps
             {
                 width = width,
                 height = height,
             };
 
-            NativeArray<float> jobNoise = new NativeArray<float>(length, Allocator.TempJob);
-            NativeArray<float2> jobColorLerps = new NativeArray<float2>(length, Allocator.TempJob);
+            NativeArray<float> noise = new NativeArray<float>(noiseLength, Allocator.TempJob);
+            NativeArray<float2> colorLerps = new NativeArray<float2>(noiseLength, Allocator.TempJob);
             NativePalette jobPaletteMain = new NativePalette(paletteMain.GetNumColors(), Allocator.TempJob);
             NativePalette jobPaletteHighlight1 = new NativePalette(paletteHighlight1.GetNumColors(), Allocator.TempJob);
             NativePalette jobPaletteHighlight2 = new NativePalette(paletteHighlight2.GetNumColors(), Allocator.TempJob);
@@ -536,8 +536,8 @@ namespace NebulaGen
             }
             for (int i = 0; i < _noise.Length; i++)
             {
-                jobNoise[i] = _noise[i];
-                jobColorLerps[i] = _colorLerps[i];
+                noise[i] = _noise[i];
+                colorLerps[i] = _colorLerps[i];
             }
 
             NebulaJobs.CalcColors jobCalcColorsPixelArt = new NebulaJobs.CalcColors
@@ -546,8 +546,8 @@ namespace NebulaGen
                 props = props,
                 noiseWidth = noiseWidth,
                 noiseHeight = noiseHeight,
-                noise = jobNoise,
-                colorLerps = jobColorLerps,
+                noise = noise,
+                colorLerps = colorLerps,
                 paletteMain = jobPaletteMain,
                 paletteHighlight1 = jobPaletteHighlight1,
                 paletteHighlight2 = jobPaletteHighlight2,
@@ -572,7 +572,7 @@ namespace NebulaGen
             JobHandle handleCalcFinalColorPass = jobCalcFinalColorPass.Schedule(length, 1);
             handleCalcFinalColorPass.Complete();
 
-            for (int i = 0; i < _noise.Length; i++)
+            for (int i = 0; i < _pixels.Length; i++)
             {
                 this._pixels[i] = new Color(
                     pixels[i].x,
@@ -582,8 +582,8 @@ namespace NebulaGen
                 );
             }
 
-            jobNoise.Dispose();
-            jobColorLerps.Dispose();
+            noise.Dispose();
+            colorLerps.Dispose();
             jobPaletteMain.Dispose();
             jobPaletteHighlight1.Dispose();
             jobPaletteHighlight2.Dispose();
@@ -646,11 +646,11 @@ namespace NebulaGen
 
         void InitColorLerps(ref float2[] colorLerps)
         {
-            if (colorLerps == null || colorLerps.Length != width * height)
+            if (colorLerps == null || colorLerps.Length != noiseWidth * noiseHeight)
             {
-                colorLerps = new float2[width * height];
+                colorLerps = new float2[noiseWidth * noiseHeight];
             }
-            Assert.AreEqual(_colorLerps.Length, width * height);
+            Assert.AreEqual(_colorLerps.Length, noiseWidth * noiseHeight);
         }
 
         Color[] NoiseToColor(float[] noise)
