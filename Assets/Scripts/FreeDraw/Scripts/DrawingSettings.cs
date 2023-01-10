@@ -8,6 +8,8 @@ namespace FreeDraw
     {
         White,
         Black,
+        Yellow,
+        Cyan,
     }
 
     // Helper methods used to set drawing settings
@@ -40,7 +42,6 @@ namespace FreeDraw
             Drawable.Pen_Colour = c;
         }
 
-
         // Call these these to change the pen settings
         public void SetMarkerRed()
         {
@@ -69,11 +70,23 @@ namespace FreeDraw
             c.a = Transparency;
             SetMarkerColour(c);
             Drawable.drawable.SetPenBrush();
+            Drawable.drawable.SetIsHighlighting(true);
+            if (OnColorChange != null) OnColorChange(PenColorType.Cyan);
+        }
+        public void SetMarkerYellow()
+        {
+            Color c = Color.yellow;
+            c.a = Transparency;
+            SetMarkerColour(c);
+            Drawable.drawable.SetPenBrush();
+            Drawable.drawable.SetIsHighlighting(true);
+            if (OnColorChange != null) OnColorChange(PenColorType.Yellow);
         }
         public void SetMarkerWhite()
         {
             Color c = Color.white;
             c.a = Transparency;
+            Drawable.drawable.SetIsHighlighting(false);
             SetMarkerColour(c);
             Drawable.drawable.SetPenBrush();
             if (OnColorChange != null) OnColorChange(PenColorType.White);
@@ -82,6 +95,7 @@ namespace FreeDraw
         {
             Color c = Color.black;
             c.a = Transparency;
+            Drawable.drawable.SetIsHighlighting(false);
             SetMarkerColour(c);
             Drawable.drawable.SetPenBrush();
             if (OnColorChange != null) OnColorChange(PenColorType.Black);

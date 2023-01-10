@@ -24,6 +24,11 @@ namespace ColorPalette
             }
         }
 
+        public string GetName()
+        {
+            return GetPaletteData().name;
+        }
+
         public PaletteData GetPaletteData()
         {
             if (myData == null)

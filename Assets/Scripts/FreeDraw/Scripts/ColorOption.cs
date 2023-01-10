@@ -32,7 +32,7 @@ public class ColorOption : MonoBehaviour
     void Start()
     {
         initialColorBG = background.color;
-        if (color == PenColorType.White) Activate();
+        if (color == PenColorType.Black) Activate();
     }
 
     void OnColorChange(PenColorType newColor)

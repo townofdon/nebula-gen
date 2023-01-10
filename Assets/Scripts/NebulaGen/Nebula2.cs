@@ -1,5 +1,6 @@
 
 using System;
+using System.Collections;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -15,11 +16,30 @@ using UnityEngine.UI;
 // - [x] show distinct noise, output textures
 // - [x] hook up drawable functionality
 // - [x] add image download
-// - [ ] add drawable masking
-// - [ ] add camera controls (pan, zoom)
+// - [x] add drawable color highlighting, show brushhead
+// - [ ] change ColorPalette to ScriptableObject
+// - [ ] add initial UI sections - see below
+// - [x] add camera controls (pan, zoom)
+// - [ ] add drawable masking - show noise overlay with low alpha
 // - [ ] only generate image on G press
 // - [ ] add new fancy noise textures
 // - [ ] flesh out with scifi UI
+
+// UI TABS
+// General Settings
+// Noise 1
+// Noise 2 ($)
+// Mask Drawing ($)
+// Keyboard Shortcuts
+
+// GENERAL SETTINGS
+// - Canvas size {float, float}
+// - Show stars {bool}
+//   - Star density {float}
+// - Enable Tiling {bool}
+//   - Tiling Distance ($)
+// - Show background {bool}
+// - Button: Save to File
 
 namespace NebulaGen
 {
@@ -33,7 +53,9 @@ namespace NebulaGen
     public class Nebula2 : MonoBehaviour, ISerializationCallbackReceiver
     {
         [Header("Refs")]
-        [SerializeField] RawImage noiseImage;
+        // [SerializeField] RawImage noiseImage;
+        [SerializeField] SpriteRenderer bgSprite;
+        [SerializeField] SpriteRenderer noiseSprite;
         [SerializeField] SpriteRenderer outputSprite;
         [SerializeField][Range(0f, 2f)] float repaintDelay = 0.2f;
 
@@ -53,7 +75,7 @@ namespace NebulaGen
         [Header("Noise")]
         [SerializeField] bool debugCompositeNoise = false;
         [SerializeField]
-        NoiseOptions noiseLayerA = new NoiseOptions
+        public NoiseOptions noiseLayerA = new NoiseOptions
         {
             noiseMode = FBMNoiseMode.Default,
             perlinFactor = 0.3f,
@@ -235,11 +257,23 @@ namespace NebulaGen
         };
 
 
+        public Action<ColorPalette.Palette> OnPaletteChange;
+        public ColorPalette.Palette MainPalette => paletteMain;
+
+        Coroutine clearingPrint;
         public void SaveImage()
         {
             Debug.Log("Saving...");
             ImageUtils.SaveImage(outputSprite.sprite.texture as Texture2D);
             Debug.Log("Save Successful!");
+            if (clearingPrint != null) StopCoroutine(clearingPrint);
+            clearingPrint = StartCoroutine(CClearPrint());
+        }
+
+        public void SetPalette(ColorPalette.Palette incoming)
+        {
+            paletteMain = incoming;
+            if (OnPaletteChange != null) OnPaletteChange.Invoke(incoming);
         }
 
         void Start()
@@ -252,7 +286,7 @@ namespace NebulaGen
             if (!shouldGenerate) return;
             if (timeElapsedSinceGenerating < repaintDelay) return;
             shouldGenerate = false;
-            Generate();
+            GenerateNoise();
         }
 
         void LateUpdate()
@@ -260,34 +294,41 @@ namespace NebulaGen
             timeElapsedSinceGenerating += Time.deltaTime;
         }
 
-        void Generate()
+        public void GenerateNoise()
         {
-            Calculate();
+            CalcNoise();
 
-            if (noiseImage.texture == null || noiseImage.texture.width != noiseWidth || noiseImage.texture.height != noiseHeight)
+            if (noiseSprite.sprite == null || noiseSprite.sprite.texture.width != noiseWidth || noiseSprite.sprite.texture.height != noiseHeight)
             {
                 Texture2D texture = NoiseToTexture2D(_noise);
-                noiseImage.texture = texture;
+                Sprite sprite = Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 50f, 0, SpriteMeshType.Tight, Vector4.zero, false);
+                noiseSprite.sprite = sprite;
             }
             else
             {
-                (noiseImage.texture as Texture2D).SetPixels(NoiseToColor(_noise));
-                (noiseImage.texture as Texture2D).Apply();
+                (noiseSprite.sprite.texture as Texture2D).SetPixels(NoiseToColor(_noise));
+                (noiseSprite.sprite.texture as Texture2D).Apply();
             }
+        }
 
+        public void DrawOutput()
+        {
+            width = sizeX;
+            height = sizeY;
+            CalcPixels();
+            Assert.AreEqual(_pixels.Length, width * height);
             if (outputSprite.sprite == null || outputSprite.sprite.texture.width != width || outputSprite.sprite.texture.height != height)
             {
+                // gen new backgrouns
+                Color[] blackPixels = new Color[width * height];
+                for (int i = 0; i < blackPixels.Length; i++) blackPixels[i] = new Color(0, 0, 0, 1);
+                Texture2D bgTexture = ColorToTexture2D(blackPixels);
+                Sprite bg = Sprite.Create(bgTexture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 50f, 0, SpriteMeshType.Tight, Vector4.zero, false);
+                bgSprite.sprite = bg;
+                // apply colors
                 Texture2D texture = ColorToTexture2D(_pixels);
-                // outputImage.texture = texture;
-
                 Sprite sprite = Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 50f, 0, SpriteMeshType.Tight, Vector4.zero, false);
                 outputSprite.sprite = sprite;
-
-                // outputImage.SetNativeSize();
-                // RectTransform rectTransform = outputImage.GetComponent<RectTransform>();
-                // Rect rect = outputImage.GetComponent<RectTransform>().rect;
-                // rect.width *= 0.01f;
-                // rect.height *= 0.01f;
             }
             else
             {
@@ -295,15 +336,6 @@ namespace NebulaGen
                 (outputSprite.sprite.texture as Texture2D).Apply();
             }
             timeElapsedSinceGenerating = 0f;
-        }
-
-        void Calculate()
-        {
-            width = sizeX;
-            height = sizeY;
-            CalcNoise();
-            CalcPixels();
-            Assert.AreEqual(_pixels.Length, width * height);
         }
 
         void CalcNoise()
@@ -503,6 +535,8 @@ namespace NebulaGen
 
         void CalcPixels()
         {
+            InitNoise(ref _noise);
+            InitPixels(ref _pixels);
             int length = width * height;
             int noiseLength = noiseWidth * noiseHeight;
             Assert.AreEqual(_pixels.Length, length);
@@ -697,6 +731,12 @@ namespace NebulaGen
         public void OnAfterDeserialize()
         {
             shouldGenerate = true;
+        }
+
+        IEnumerator CClearPrint()
+        {
+            yield return new WaitForSeconds(2f);
+            Debug.Log("");
         }
     }
 }
