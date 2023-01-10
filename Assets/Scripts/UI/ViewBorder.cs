@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class ViewNoise : ViewBase
+public class ViewBorder : ViewBase
 {
     protected override void OnActivate()
     {

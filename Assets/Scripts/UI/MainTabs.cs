@@ -8,6 +8,7 @@ public enum TabType
     Mask,
     Draw,
     Help,
+    Border,
 }
 
 public class MainTabs : MonoBehaviour

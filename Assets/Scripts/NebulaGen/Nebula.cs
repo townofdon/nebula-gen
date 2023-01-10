@@ -12,7 +12,6 @@ namespace NebulaGen
         [SerializeField] Color fillColor = Color.cyan;
         [SerializeField] Color highlightColor = Color.white;
         [SerializeField] Color backgroundColor = Color.black;
-        [SerializeField][Range(0f, 1f)] float maxAlpha = 0.9f;
 
         [Space]
         [Space]

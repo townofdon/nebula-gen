@@ -3,7 +3,7 @@ using TMPro;
 using NebulaGen;
 
 [RequireComponent(typeof(TMP_Dropdown))]
-public class DropdownBase : MonoBehaviour
+public abstract class DropdownBase : MonoBehaviour
 {
     NebulaGen.NoiseType noiseType;
 

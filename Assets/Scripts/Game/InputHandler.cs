@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using NebulaGen;
 
 public class InputHandler : MonoBehaviour
@@ -15,6 +16,7 @@ public class InputHandler : MonoBehaviour
     Vector3 initialCameraPosition;
     float initialCameraZoom;
 
+    EventSystem eventSystem;
     MainTabs tabs;
     Nebula2 nebula2;
 
@@ -41,6 +43,7 @@ public class InputHandler : MonoBehaviour
     {
         tabs = FindObjectOfType<MainTabs>();
         nebula2 = FindObjectOfType<Nebula2>();
+        eventSystem = FindObjectOfType<EventSystem>();
     }
 
     void Start()
@@ -54,6 +57,7 @@ public class InputHandler : MonoBehaviour
         HandleMove();
         HandleZoom();
         HandleTab();
+        HandleNumberShortcut();
         HandleReset();
         HandleSave();
     }
@@ -69,6 +73,32 @@ public class InputHandler : MonoBehaviour
         else
         {
             OnTabForward?.Invoke();
+        }
+    }
+
+    void HandleNumberShortcut()
+    {
+        bool isShiftKeyHeld = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        if (!isShiftKeyHeld) return;
+        if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.Keypad1))
+        {
+            tabs.ChangeTab(TabType.Main);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2))
+        {
+            tabs.ChangeTab(TabType.Noise);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3))
+        {
+            tabs.ChangeTab(TabType.Mask);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha4) || Input.GetKeyDown(KeyCode.Keypad4))
+        {
+            tabs.ChangeTab(TabType.Border);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha5) || Input.GetKeyDown(KeyCode.Keypad5))
+        {
+            tabs.ChangeTab(TabType.Help);
         }
     }
 
@@ -94,6 +124,7 @@ public class InputHandler : MonoBehaviour
         zoom = 0f;
         bool shouldZoomIn = Input.GetKey(KeyCode.Plus) || Input.GetKey(KeyCode.Equals);
         bool shouldZoomOut = Input.GetKey(KeyCode.Underscore) || Input.GetKey(KeyCode.Minus);
+        if (shouldZoomIn || shouldZoomOut) DeselectCurrentlyFocused();
         if (shouldZoomIn) { zoom -= 1f; }
         if (shouldZoomOut) { zoom += 1f; }
         camera.orthographicSize += zoom * zoomSpeed * Time.deltaTime;
@@ -111,5 +142,10 @@ public class InputHandler : MonoBehaviour
     {
         if (!Input.GetKeyDown(KeyCode.R)) return;
         ResetCamera();
+    }
+
+    void DeselectCurrentlyFocused()
+    {
+        eventSystem.SetSelectedGameObject(null);
     }
 }

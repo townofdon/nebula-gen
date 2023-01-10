@@ -9,6 +9,19 @@ using UnityEngine.Assertions;
 using UnityEngine.UI;
 
 // TODO
+// - [ ] Fix bug: turning mask on/off causes weirdness
+// - [ ] Add octaves to falloff variance calc
+// - [ ] Make current noise value factor into strength of falloff variance
+// - [ ] Add exciting fancy noise textures
+// - [ ] Remove Draw view; add Border view
+// - [ ] change ColorPalette to ScriptableObject
+// - [ ] add initial UI sections - see below
+// - [ ] only generate image on G press
+// - [ ] add new fancy noise textures
+// - [ ] flesh out with scifi UI
+// BACKBURNER
+// - [ ] add drawable masking - show noise overlay with low alpha
+// DONE
 // - [x] get old project working
 // - [x] get min/max noise fnc working (add separate normalize passes)
 // - [x] add better tiling
@@ -17,13 +30,7 @@ using UnityEngine.UI;
 // - [x] hook up drawable functionality
 // - [x] add image download
 // - [x] add drawable color highlighting, show brushhead
-// - [ ] change ColorPalette to ScriptableObject
-// - [ ] add initial UI sections - see below
 // - [x] add camera controls (pan, zoom)
-// - [ ] add drawable masking - show noise overlay with low alpha
-// - [ ] only generate image on G press
-// - [ ] add new fancy noise textures
-// - [ ] flesh out with scifi UI
 
 // UI TABS
 // General Settings
@@ -50,6 +57,14 @@ namespace NebulaGen
         RGB,
     }
 
+    public enum BorderMode
+    {
+        None,
+        FalloffBox,
+        FalloffCircle,
+        Tile,
+    }
+
     public class Nebula2 : MonoBehaviour, ISerializationCallbackReceiver
     {
         [Header("Refs")]
@@ -63,8 +78,8 @@ namespace NebulaGen
         [Space]
 
         [Header("Dimensions")]
-        [SerializeField] int sizeX = 480;
-        [SerializeField] int sizeY = 480;
+        [SerializeField] public int sizeX = 480;
+        [SerializeField] public int sizeY = 480;
 
         const int noiseWidth = 480;
         const int noiseHeight = 480;
@@ -226,15 +241,6 @@ namespace NebulaGen
         [SerializeField] bool enableDithering = true;
         [SerializeField][Range(0f, 1f)] float ditherThreshold = 0.25f;
 
-        enum BorderMode
-        {
-            None,
-            FalloffBox,
-            FalloffCircle,
-            TileMirror,
-            TileStretch,
-        }
-
         int width;
         int height;
 
@@ -274,6 +280,36 @@ namespace NebulaGen
         {
             paletteMain = incoming;
             if (OnPaletteChange != null) OnPaletteChange.Invoke(incoming);
+        }
+
+        public void SetBorderMode(BorderMode incoming)
+        {
+            borderMode = incoming;
+        }
+
+        public void SetEdgeDistance(float incoming)
+        {
+            edgeDistance = incoming;
+        }
+
+        public void SetEdgeFalloff(float incoming)
+        {
+            edgeFalloff = incoming;
+        }
+
+        public void SetEdgeVarianceFactor(float incoming)
+        {
+            edgeVarianceFactor = incoming;
+        }
+
+        public void SetEdgeVarianceStrength(float incoming)
+        {
+            edgeVarianceStrength = incoming;
+        }
+
+        public void SetTilingFill(int incoming)
+        {
+            tilingFill = incoming;
         }
 
         void Start()
@@ -349,7 +385,7 @@ namespace NebulaGen
             {
                 width = noiseWidth,
                 height = noiseHeight,
-                tilingFill = borderMode == BorderMode.TileMirror ? tilingFill : 0,
+                tilingFill = borderMode == BorderMode.Tile ? tilingFill : 0,
             };
             int length = noiseWidth * noiseHeight;
 
