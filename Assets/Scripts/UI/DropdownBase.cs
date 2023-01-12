@@ -1,10 +1,14 @@
 using UnityEngine;
+using UnityEngine.Assertions;
 using TMPro;
 using NebulaGen;
 
 [RequireComponent(typeof(TMP_Dropdown))]
 public abstract class DropdownBase : MonoBehaviour
 {
+    DropdownInitialOption initialOption;
+    TextMeshProUGUI initialOptionText;
+
     NebulaGen.NoiseType noiseType;
 
     System.Type enumType;
@@ -15,16 +19,24 @@ public abstract class DropdownBase : MonoBehaviour
     {
         enumType = incomingEnumType;
         dropdown.options.Clear();
-        foreach (var option in System.Enum.GetNames(incomingEnumType))
+        dropdown.ClearOptions();
+        var options = System.Enum.GetNames(incomingEnumType);
+        for (int i = 0; i < options.Length; i++)
         {
-            dropdown.options.Add(new TMP_Dropdown.OptionData(option));
+            dropdown.options.Add(new TMP_Dropdown.OptionData(options[i]));
         }
+        dropdown.value = 0;
+        if (options.Length > 0) initialOptionText.text = options[0];
     }
 
     protected void Awake()
     {
         dropdown = GetComponent<TMP_Dropdown>();
         nebula2 = FindObjectOfType<Nebula2>();
+        initialOption = GetComponentInChildren<DropdownInitialOption>();
+        Assert.IsNotNull(initialOption);
+        initialOptionText = initialOption.GetComponent<TextMeshProUGUI>();
+        Assert.IsNotNull(initialOptionText);
     }
 
     protected void AfterChange()

@@ -9,19 +9,20 @@ using UnityEngine.Assertions;
 using UnityEngine.UI;
 
 // TODO
-// - [ ] Fix bug: turning mask on/off causes weirdness
-// - [ ] Add octaves to falloff variance calc
-// - [ ] Make current noise value factor into strength of falloff variance
+// - [ ] Fix bug: turning mask on/off causes weirdness - seems to be related to non-standard canvas size
 // - [ ] Add exciting fancy noise textures
-// - [ ] Remove Draw view; add Border view
 // - [ ] change ColorPalette to ScriptableObject
-// - [ ] add initial UI sections - see below
 // - [ ] only generate image on G press
 // - [ ] add new fancy noise textures
-// - [ ] flesh out with scifi UI
+// - [ ] show mask preview in red
+// - [ ] flesh out remaining UI
 // BACKBURNER
 // - [ ] add drawable masking - show noise overlay with low alpha
 // DONE
+// - [x] Add octaves to falloff variance calc
+// - [x] Make current noise value factor into strength of falloff variance
+// - [x] Remove Draw view; add Border view
+// - [x] add initial UI sections - see below
 // - [x] get old project working
 // - [x] get min/max noise fnc working (add separate normalize passes)
 // - [x] add better tiling
@@ -227,11 +228,28 @@ namespace NebulaGen
 
         [Header("Border")]
         [SerializeField] BorderMode borderMode = BorderMode.FalloffBox;
-        [SerializeField][Range(0f, 50f)] float edgeDistance = 5f;
-        [SerializeField][Range(0f, 1000f)] float edgeFalloff = 5f;
-        [SerializeField][Range(0f, 10f)] float edgeVarianceFactor = 1f;
-        [SerializeField][Range(0f, 150f)] float edgeVarianceStrength = 1f;
-        [SerializeField][Range(0f, 100)] int tilingFill = 50;
+        [SerializeField][Range(0f, 50f)] public float edgeDistance = 5f;
+        [SerializeField][Range(0f, 1000f)] public float edgeFalloff = 5f;
+        [SerializeField][Range(0f, 1000f)] public float edgeCutStrength = 5f;
+        [SerializeField][Range(0f, 1000f)] public float edgeVarianceEffect = 20f;
+        [SerializeField][Range(0f, 150f)] public float edgeVarianceStrength = 5f;
+        [SerializeField][Range(0f, 100)] public int tilingFill = 50;
+        [SerializeField]
+        public NoiseOptions falloffOptions = new NoiseOptions
+        {
+            noiseMode = FBMNoiseMode.Default,
+            minCutoff = 0.2f,
+            maxCutoff = 0.8f,
+            perlinFactor = .35f,
+            perlinOffset = Vector2.one * 100f,
+            voronoiAngleOffset = 0f,
+            voronoiCellDensity = 5f,
+            octaves = 4,
+            initialFreq = 1f,
+            initialAmp = 1f,
+            persistence = 0.5f,
+            lacunarity = 2.0f,
+        };
 
         [Space]
         [Space]
@@ -282,34 +300,13 @@ namespace NebulaGen
             if (OnPaletteChange != null) OnPaletteChange.Invoke(incoming);
         }
 
+        public Action<BorderMode> OnBorderModeChange;
+        public BorderMode CurrentBorderMode => borderMode;
+
         public void SetBorderMode(BorderMode incoming)
         {
             borderMode = incoming;
-        }
-
-        public void SetEdgeDistance(float incoming)
-        {
-            edgeDistance = incoming;
-        }
-
-        public void SetEdgeFalloff(float incoming)
-        {
-            edgeFalloff = incoming;
-        }
-
-        public void SetEdgeVarianceFactor(float incoming)
-        {
-            edgeVarianceFactor = incoming;
-        }
-
-        public void SetEdgeVarianceStrength(float incoming)
-        {
-            edgeVarianceStrength = incoming;
-        }
-
-        public void SetTilingFill(int incoming)
-        {
-            tilingFill = incoming;
+            OnBorderModeChange?.Invoke(incoming);
         }
 
         void Start()
@@ -323,6 +320,7 @@ namespace NebulaGen
             if (timeElapsedSinceGenerating < repaintDelay) return;
             shouldGenerate = false;
             GenerateNoise();
+            DrawOutput();
         }
 
         void LateUpdate()
@@ -394,6 +392,7 @@ namespace NebulaGen
 
             NativeArray<float> noiseA = new NativeArray<float>(length, Allocator.TempJob);
             NativeArray<float> noiseB = new NativeArray<float>(length, Allocator.TempJob);
+            NativeArray<float> noiseFalloff = new NativeArray<float>(length, Allocator.TempJob);
             // NativeArray<float> noiseC = new NativeArray<float>(length, Allocator.TempJob);
             NativeArray<float> mask1 = new NativeArray<float>(length, Allocator.TempJob);
             NativeArray<float> mask2 = new NativeArray<float>(length, Allocator.TempJob);
@@ -406,6 +405,7 @@ namespace NebulaGen
             // noiseLayerC.mixAmount = mixNoiseC;
             maskLayerA.mixAmount = 1f;
             maskLayerB.mixAmount = 1f;
+            falloffOptions.mixAmount = 1f;
             NebulaJobs.CalcNoiseWithColorLerps jobNoiseA = new NebulaJobs.CalcNoiseWithColorLerps
             {
                 noise = noiseA,
@@ -417,6 +417,12 @@ namespace NebulaGen
             {
                 noise = noiseB,
                 options = noiseLayerB,
+                props = props,
+            };
+            NebulaJobs.CalcNoise jobNoiseFalloff = new NebulaJobs.CalcNoise
+            {
+                noise = noiseFalloff,
+                options = falloffOptions,
                 props = props,
             };
             // NebulaJobs.CalcNoise jobNoiseC = new NebulaJobs.CalcNoise
@@ -437,30 +443,20 @@ namespace NebulaGen
                 options = maskLayerB,
                 props = props,
             };
-            NebulaJobs.CalcFalloffJob jobFalloff = new NebulaJobs.CalcFalloffJob
-            {
-                falloff = falloff,
-                props = props,
-                amountBox = borderMode == BorderMode.FalloffBox ? 1f : 0f,
-                amountCircle = borderMode == BorderMode.FalloffCircle ? 1f : 0f,
-                edgeDistance = edgeDistance,
-                edgeFalloff = edgeFalloff,
-                edgeVarianceFactor = edgeVarianceFactor,
-                edgeVarianceStrength = edgeVarianceStrength,
-            };
+
             JobHandle handleNoiseA = jobNoiseA.Schedule(length, 1);
             JobHandle handleNoiseB = jobNoiseB.Schedule(length, 1);
+            JobHandle handleNoiseFalloff = jobNoiseFalloff.Schedule(length, 1);
             // JobHandle handleNoiseC = jobNoiseC.Schedule(length, 1);
             JobHandle handleMask1 = jobMask1.Schedule(length, 1);
             JobHandle handleMask2 = jobMask2.Schedule(length, 1);
-            JobHandle handleFalloff = jobFalloff.Schedule(length, 1);
 
             handleNoiseA.Complete();
             handleNoiseB.Complete();
+            handleNoiseFalloff.Complete();
             // handleNoiseC.Complete();
             handleMask1.Complete();
             handleMask2.Complete();
-            handleFalloff.Complete();
             #endregion NOISE_CALC
 
             #region NORM_PASS_ONE
@@ -474,11 +470,37 @@ namespace NebulaGen
                 noise = noiseB,
                 options = noiseLayerB,
             };
+            NebulaJobs.NormalizeNoise jobNormNoiseFalloff = new NebulaJobs.NormalizeNoise
+            {
+                noise = noiseFalloff,
+                options = falloffOptions,
+            };
             JobHandle handleNormNoiseA = jobNormNoiseA.Schedule();
             JobHandle handleNormNoiseB = jobNormNoiseB.Schedule();
+            JobHandle handleNormNoiseFalloff = jobNormNoiseFalloff.Schedule();
             handleNormNoiseA.Complete();
             handleNormNoiseB.Complete();
+            handleNormNoiseFalloff.Complete();
             #endregion NORM_PASS_ONE
+
+            #region FALLOFF_CALC
+            NebulaJobs.CalcFalloffJob jobFalloff = new NebulaJobs.CalcFalloffJob
+            {
+                falloff = falloff,
+                props = props,
+                noise = noiseA,
+                noiseFalloff = noiseFalloff,
+                amountBox = borderMode == BorderMode.FalloffBox ? 1f : 0f,
+                amountCircle = borderMode == BorderMode.FalloffCircle ? 1f : 0f,
+                edgeDistance = edgeDistance,
+                edgeFalloff = edgeFalloff,
+                edgeCutStrength = edgeCutStrength,
+                edgeVarianceEffect = edgeVarianceEffect,
+                edgeVarianceStrength = edgeVarianceStrength,
+            };
+            JobHandle handleFalloff = jobFalloff.Schedule(length, 1);
+            handleFalloff.Complete();
+            #endregion
 
             #region COMPOSITING
             NebulaJobs.CalcCompositeMask jobCompositeMask = new NebulaJobs.CalcCompositeMask
@@ -562,6 +584,7 @@ namespace NebulaGen
             mask.Dispose();
             noiseA.Dispose();
             noiseB.Dispose();
+            noiseFalloff.Dispose();
             // noiseC.Dispose();
             mask1.Dispose();
             mask2.Dispose();

@@ -3,7 +3,6 @@ using Unity.Mathematics;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Burst;
-using System;
 
 namespace NebulaGen
 {
@@ -203,6 +202,7 @@ namespace NebulaGen
                 // note - alpha will be set on final pass
             }
 
+            [BurstCompile]
             float2 getResampledColorLerp(int current)
             {
                 // get x, y for current pixel index
@@ -223,6 +223,7 @@ namespace NebulaGen
             // color(15,15) => noise(7,7)
             // color(20,20) => noise(10,10)
 
+            [BurstCompile]
             float getResampledNoiseVal(int current)
             {
                 // get x, y for current pixel index
@@ -251,17 +252,20 @@ namespace NebulaGen
                 // return math.lerp(noiseLower, noiseUpper, t);
             }
 
+            [BurstCompile]
             int GetNoiseIndexFromCoords(int x, int y)
             {
                 return math.clamp(x, 0, noiseWidth - 1) + noiseWidth * math.clamp(y, 0, noiseHeight - 1);
             }
 
+            [BurstCompile]
             int GetNoiseIndexFromCoords(float2 coords)
             {
                 return GetNoiseIndexFromCoords((int)coords.x, (int)coords.y);
             }
 
             // given a value between 0-1, return corresponding palette color
+            [BurstCompile]
             float4 GetColorByValue(ref NativePalette palette, float value, int pixelIndex = 0, float ditherThreshold = 0f)
             {
                 if (value > 1) return palette.colors[palette.colors.Length - 1];
@@ -290,6 +294,7 @@ namespace NebulaGen
                 return palette.colors[palette.colors.Length - 1];
             }
 
+            [BurstCompile]
             float4 GetLerpedColorByValue(ref NativePalette palette, float value)
             {
                 if (value == 1) return palette.colors[palette.colors.Length - 1];
@@ -300,6 +305,7 @@ namespace NebulaGen
                 );
             }
 
+            [BurstCompile]
             int GetClampedIndex(float index, int length)
             {
                 return math.clamp((int)math.floor(index), 0, length - 1);
@@ -328,6 +334,7 @@ namespace NebulaGen
                 pixels[i] = newColor;
             }
 
+            [BurstCompile]
             float GetColorValue(float4 color)
             {
                 return math.max(color.x, math.max(color.y, color.z));
@@ -472,32 +479,39 @@ namespace NebulaGen
             [ReadOnly] public float amountCircle;
             [ReadOnly] public float edgeDistance;
             [ReadOnly] public float edgeFalloff;
-            [ReadOnly] public float edgeVarianceFactor;
+            [ReadOnly] public float edgeCutStrength;
+            [ReadOnly] public float edgeVarianceEffect;
             [ReadOnly] public float edgeVarianceStrength;
 
+            [ReadOnly] public NativeArray<float> noise;
+            [ReadOnly] public NativeArray<float> noiseFalloff;
             public NativeArray<float> falloff;
 
             public void Execute(int current)
             {
                 float distanceToEdge = math.max(float.MaxValue - float.MaxValue * amountBox - float.MaxValue * amountCircle, 0);
+                float edgeCut = math.clamp(1 - noise[current], 0, 1);
                 distanceToEdge += getDistanceBox(current) * amountBox;
                 distanceToEdge += getDistanceCircle(current) * amountCircle;
-                distanceToEdge += getVariance(current, edgeVarianceFactor, edgeVarianceStrength, props);
-                falloff[current] = math.lerp(0f, 1f, math.clamp((distanceToEdge - edgeDistance) / edgeFalloff, 0, 1));
+                distanceToEdge -= edgeCut * edgeCutStrength;
+                distanceToEdge -= getVariance(current, edgeVarianceStrength, 1 - getDistanceMul(distanceToEdge, edgeVarianceEffect));
+                falloff[current] = getDistanceMul(distanceToEdge, edgeFalloff);
             }
 
-            float getVariance(int current, float edgeVarianceFactor, float edgeVarianceStrength, JobProps props)
+            // return a float between 0-1 where 0 => closest to edge, 1 => furthest from edge
+            [BurstCompile]
+            float getDistanceMul(float distanceToEdge, float comparator)
             {
-                int x = current % props.width;
-                int y = current / props.width;
-                return GetNoise(x, y, 1f - edgeVarianceFactor, new NoiseOptions
-                {
-                    noiseType = NoiseType.Perlin1,
-                    perlinFactor = 0.01f,
-                    perlinOffset = new float2(100f, 100f),
-                }) * -edgeVarianceStrength;
+                return math.lerp(0, 1, math.clamp((distanceToEdge - edgeDistance) / math.max(comparator, 1), 0, 1));
             }
 
+            [BurstCompile]
+            float getVariance(int current, float edgeVarianceStrength, float distanceMul)
+            {
+                return noiseFalloff[current] * edgeVarianceStrength * distanceMul;
+            }
+
+            [BurstCompile]
             float getDistanceBox(int current)
             {
                 int width = props.width;
@@ -511,6 +525,7 @@ namespace NebulaGen
                        math.min(distToEdgeTop, distToEdgeBottom)));
             }
 
+            [BurstCompile]
             float getDistanceCircle(int current)
             {
                 int width = props.width;
@@ -597,16 +612,19 @@ namespace NebulaGen
                 }
             }
 
+            [BurstCompile]
             float Lerp(float a, float b, float t)
             {
                 return math.lerp(a, b, math.clamp(t, 0f, 1f));
             }
 
+            [BurstCompile]
             float Max(float a, float b, float c)
             {
                 return math.max(a, math.max(b, c));
             }
 
+            [BurstCompile]
             int GetIndexFromCoords(int x, int y)
             {
                 return math.clamp(x, 0, props.width - 1) + props.width * math.clamp(y, 0, props.height - 1);
@@ -740,6 +758,7 @@ namespace NebulaGen
             );
         }
 
+        [BurstCompile]
         static float GetNoise(float x, float y, float frequency, NoiseOptions options)
         {
             float xCoord = options.perlinOffset.x + x * options.perlinFactor * frequency + NOISE_BUFFER;
