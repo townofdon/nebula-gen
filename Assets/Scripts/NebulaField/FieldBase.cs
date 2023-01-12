@@ -29,19 +29,6 @@ public abstract class FieldBase : MonoBehaviour
         FieldEvent.OnReinitializeFields -= OnReinitializeFields;
     }
 
-    void OnValueChanged(string incoming)
-    {
-        if (float.TryParse(incoming, out float result))
-        {
-            OnValueChanged(result);
-        }
-    }
-
-    void OnValueChanged(bool incoming)
-    {
-        OnValueChanged(incoming ? 1 : 0);
-    }
-
     void Awake()
     {
         FieldEvent.Init();
@@ -77,5 +64,20 @@ public abstract class FieldBase : MonoBehaviour
 
     protected abstract float GetInitialValue();
 
+
+    void OnValueChanged(string incoming)
+    {
+        if (float.TryParse(incoming, out float result))
+        {
+            OnValueChanged(result);
+        }
+    }
+
+    void OnValueChanged(bool incoming)
+    {
+        OnValueChanged(incoming ? 1 : 0);
+    }
+
     protected abstract void OnValueChanged(float incoming);
+
 }

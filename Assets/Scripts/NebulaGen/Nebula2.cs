@@ -7,29 +7,14 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-// ADD FIELDS
-// - [ ] RANDOMIZE {button}
-// - [x] perlinFactor (frequency) {slider}
-// - [x] perlinOffsetX (offsetX) {slider}
-// - [x] perlinOffsetY (offsetY) {slider}
-// - [ ] octaves {slider} 1-12
-// - [ ] lacunarity {slider}
-// - [ ] persistence {slider}
-// HEADING: DOMAIN SHIFT
-// - [ ] domainShiftPasses {slider}
-// - [ ] domainShiftAmount {slider}
-// HEADING: FX
-// - [ ] swirlAmount {slider}
-// - [ ] swirlIntensity {slider}
-// - [ ] warpAmount {slider}
-// - [ ] warpIntensity {slider}
-
 // TODO
+// - [ ] Add mask fields
 // - [ ] Fix bug: turning mask on/off causes weirdness - seems to be related to non-standard canvas size
 // - [ ] Add exciting fancy noise textures
-// - [ ] change ColorPalette to ScriptableObject
-// - [ ] add new fancy noise textures
-// - [ ] flesh out remaining UI
+// - [ ] Change ColorPalette to ScriptableObject
+// - [ ] Add more color palettes
+// - [ ] add file section?? -> save icon in bottom-right corner, with tooltip
+// - [ ] add help section - instructions, keyboard shortcuts
 // - [ ] add download button
 // BACKBURNER
 // - [ ] only generate image on G press
@@ -91,6 +76,7 @@ namespace NebulaGen
         [SerializeField] SpriteRenderer maskSprite;
         [SerializeField] SpriteRenderer outputSprite;
         [SerializeField][Range(0f, 2f)] float repaintDelay = 0.2f;
+        [SerializeField][Range(0f, 2f)] float redrawDelay = 0.2f;
 
         [Space]
         [Space]
@@ -264,6 +250,9 @@ namespace NebulaGen
         bool shouldGenerate;
         float timeElapsedSinceGenerating = float.MaxValue;
 
+        bool shouldDraw;
+        float timeElapsedSinceDrawing = float.MaxValue;
+
         NoiseOptions defaultNoiseOptions = new NoiseOptions
         {
             normType = NormalizationType.Truncate,
@@ -301,29 +290,55 @@ namespace NebulaGen
             OnBorderModeChange?.Invoke(incoming);
         }
 
-        void Start()
+        public void GenerateNoise()
         {
             shouldGenerate = true;
         }
 
+        public void DrawOutput()
+        {
+            shouldDraw = true;
+        }
+
+        void Start()
+        {
+            shouldGenerate = true;
+            shouldDraw = true;
+        }
+
         void Update()
+        {
+            TryGenerate();
+            TryDrawOutput();
+        }
+
+        void TryGenerate()
         {
             if (!shouldGenerate) return;
             if (timeElapsedSinceGenerating < repaintDelay) return;
             shouldGenerate = false;
-            GenerateNoise();
-            DrawOutput();
+            GenerateNoiseImpl();
+            timeElapsedSinceGenerating = 0f;
+        }
+
+        void TryDrawOutput()
+        {
+            if (!shouldDraw) return;
+            if (timeElapsedSinceDrawing < redrawDelay) return;
+            shouldDraw = false;
+            DrawOutputImpl();
+            timeElapsedSinceDrawing = 0f;
         }
 
         void LateUpdate()
         {
             timeElapsedSinceGenerating += Time.deltaTime;
+            timeElapsedSinceDrawing += Time.deltaTime;
         }
 
-        public void GenerateNoise()
+        void GenerateNoiseImpl()
         {
             CalcNoise();
-
             if (noiseSprite.sprite == null || noiseSprite.sprite.texture.width != noiseWidth || noiseSprite.sprite.texture.height != noiseHeight)
             {
                 Texture2D texture = NoiseToTexture2D(_noise, Color.white);
@@ -349,7 +364,7 @@ namespace NebulaGen
             }
         }
 
-        public void DrawOutput()
+        void DrawOutputImpl()
         {
             width = sizeX;
             height = sizeY;
@@ -373,7 +388,6 @@ namespace NebulaGen
                 (outputSprite.sprite.texture as Texture2D).SetPixels(_pixels);
                 (outputSprite.sprite.texture as Texture2D).Apply();
             }
-            timeElapsedSinceGenerating = 0f;
         }
 
         void CalcNoise()
@@ -770,6 +784,7 @@ namespace NebulaGen
         public void OnAfterDeserialize()
         {
             shouldGenerate = true;
+            shouldDraw = true;
         }
 
         IEnumerator CClearPrint()
