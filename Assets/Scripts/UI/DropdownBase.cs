@@ -18,9 +18,29 @@ public abstract class DropdownBase : MonoBehaviour
     protected void SetOptions(System.Type incomingEnumType)
     {
         enumType = incomingEnumType;
+        Initialize();
+    }
+
+    protected void OnEnable()
+    {
+        FieldEvent.OnReinitializeFields += OnReinitializeFields;
+    }
+
+    protected void OnDisable()
+    {
+        FieldEvent.OnReinitializeFields -= OnReinitializeFields;
+    }
+
+    void OnReinitializeFields()
+    {
+        Initialize();
+    }
+
+    void Initialize()
+    {
         dropdown.options.Clear();
         dropdown.ClearOptions();
-        var options = System.Enum.GetNames(incomingEnumType);
+        var options = System.Enum.GetNames(enumType);
         for (int i = 0; i < options.Length; i++)
         {
             dropdown.options.Add(new TMP_Dropdown.OptionData(options[i]));

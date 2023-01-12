@@ -6,19 +6,36 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEngine.UI;
+
+// ADD FIELDS
+// - [ ] RANDOMIZE {button}
+// - [x] perlinFactor (frequency) {slider}
+// - [x] perlinOffsetX (offsetX) {slider}
+// - [x] perlinOffsetY (offsetY) {slider}
+// - [ ] octaves {slider} 1-12
+// - [ ] lacunarity {slider}
+// - [ ] persistence {slider}
+// HEADING: DOMAIN SHIFT
+// - [ ] domainShiftPasses {slider}
+// - [ ] domainShiftAmount {slider}
+// HEADING: FX
+// - [ ] swirlAmount {slider}
+// - [ ] swirlIntensity {slider}
+// - [ ] warpAmount {slider}
+// - [ ] warpIntensity {slider}
 
 // TODO
 // - [ ] Fix bug: turning mask on/off causes weirdness - seems to be related to non-standard canvas size
 // - [ ] Add exciting fancy noise textures
 // - [ ] change ColorPalette to ScriptableObject
-// - [ ] only generate image on G press
 // - [ ] add new fancy noise textures
-// - [ ] show mask preview in red
 // - [ ] flesh out remaining UI
+// - [ ] add download button
 // BACKBURNER
+// - [ ] only generate image on G press
 // - [ ] add drawable masking - show noise overlay with low alpha
 // DONE
+// - [x] show mask preview in red
 // - [x] Add octaves to falloff variance calc
 // - [x] Make current noise value factor into strength of falloff variance
 // - [x] Remove Draw view; add Border view

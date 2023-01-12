@@ -18,6 +18,7 @@ public abstract class FieldBase : MonoBehaviour
         input?.onValueChanged.AddListener(OnValueChanged);
         slider?.onValueChanged.AddListener(OnValueChanged);
         toggle?.onValueChanged.AddListener(OnValueChanged);
+        FieldEvent.OnReinitializeFields += OnReinitializeFields;
     }
 
     void OnDisable()
@@ -25,6 +26,7 @@ public abstract class FieldBase : MonoBehaviour
         input?.onValueChanged.RemoveListener(OnValueChanged);
         slider?.onValueChanged.RemoveListener(OnValueChanged);
         toggle?.onValueChanged.RemoveListener(OnValueChanged);
+        FieldEvent.OnReinitializeFields -= OnReinitializeFields;
     }
 
     void OnValueChanged(string incoming)
@@ -42,6 +44,7 @@ public abstract class FieldBase : MonoBehaviour
 
     void Awake()
     {
+        FieldEvent.Init();
         nebula2 = FindObjectOfType<NebulaGen.Nebula2>();
         selectable = GetComponent<Selectable>();
         // the `as` cast will not throw an exception, but just return `null`
@@ -52,9 +55,19 @@ public abstract class FieldBase : MonoBehaviour
 
     void Start()
     {
+        Initialize();
+    }
+
+    void Initialize()
+    {
         if (input) input.text = GetInitialValue().ToString();
         if (slider) slider.value = GetInitialValue();
         if (toggle) toggle.isOn = GetInitialValue() > 0;
+    }
+
+    void OnReinitializeFields()
+    {
+        Initialize();
     }
 
     protected void AfterChange()
