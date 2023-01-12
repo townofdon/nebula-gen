@@ -10,5 +10,6 @@ public class ViewMain : ViewBase
         spriteOutput.SetActive(true);
         spriteDrawSurface.SetActive(false);
         spriteNoise.SetActive(false);
+        spriteMask.SetActive(false);
     }
 }

@@ -12,6 +12,7 @@ public abstract class ViewBase : MonoBehaviour
     protected SpriteBase spriteBackground;
     protected SpriteBase spriteDrawSurface;
     protected SpriteBase spriteNoise;
+    protected SpriteBase spriteMask;
     protected SpriteBase spriteOutput;
 
     InputHandler input;
@@ -43,6 +44,7 @@ public abstract class ViewBase : MonoBehaviour
         spriteBackground = FindObjectOfType<SpriteBackground>(true);
         spriteDrawSurface = FindObjectOfType<SpriteDrawSurface>(true);
         spriteNoise = FindObjectOfType<SpriteNoise>(true);
+        spriteMask = FindObjectOfType<SpriteMask>(true);
         spriteOutput = FindObjectOfType<SpriteOutput>(true);
     }
 

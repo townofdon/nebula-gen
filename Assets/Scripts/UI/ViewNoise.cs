@@ -9,5 +9,6 @@ public class ViewNoise : ViewBase
         spriteOutput.SetActive(false);
         spriteDrawSurface.SetActive(false);
         spriteNoise.SetActive(true);
+        spriteMask.SetActive(false);
     }
 }

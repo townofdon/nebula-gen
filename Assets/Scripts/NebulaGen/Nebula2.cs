@@ -69,9 +69,9 @@ namespace NebulaGen
     public class Nebula2 : MonoBehaviour, ISerializationCallbackReceiver
     {
         [Header("Refs")]
-        // [SerializeField] RawImage noiseImage;
         [SerializeField] SpriteRenderer bgSprite;
         [SerializeField] SpriteRenderer noiseSprite;
+        [SerializeField] SpriteRenderer maskSprite;
         [SerializeField] SpriteRenderer outputSprite;
         [SerializeField][Range(0f, 2f)] float repaintDelay = 0.2f;
 
@@ -134,28 +134,6 @@ namespace NebulaGen
             warpAmount = 0f,
             warpIntensity = 1f,
         };
-        // [SerializeField]
-        // NoiseOptions noiseLayerC = new NoiseOptions
-        // {
-        //     noiseMode = FBMNoiseMode.Default,
-        //     // minCutoff = 0.2f,
-        //     // maxCutoff = 1f,
-        //     perlinFactor = 0.4f,
-        //     perlinOffset = Vector2.one * 25f,
-        //     voronoiAngleOffset = 0f,
-        //     voronoiCellDensity = 1f,
-        //     octaves = 8,
-        //     initialAmp = 1f,
-        //     initialFreq = 1f,
-        //     persistence = 0.5f,
-        //     lacunarity = 2.0f,
-        //     domainShiftPasses = 0,
-        //     domainShiftAmount = 10f,
-        //     swirlAmount = 0f,
-        //     swirlIntensity = 1f,
-        //     warpAmount = 0f,
-        //     warpIntensity = 1f,
-        // };
 
         [Header("Mask")]
 
@@ -201,11 +179,8 @@ namespace NebulaGen
         [Header("Mix")]
         [SerializeField][Range(0f, 1f)] float mixNoiseA = 1f;
         [SerializeField][Range(0f, 1f)] float mixNoiseB = 0f;
-        // [SerializeField][Range(0f, 1f)] float mixNoiseC = 0F;
-        [SerializeField][Range(0f, 1f)] float mixMask = 1f;
+        [SerializeField][Range(0f, 1f)] public float mixMask = 1f;
         [SerializeField] AnimationCurve outputCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
-        // [SerializeField][Range(0f, 1f)] float minCutoff = 0f;
-        // [SerializeField][Range(0f, 1f)] float maxCutoff = 0f;
 
         [Space]
         [Space]
@@ -334,14 +309,26 @@ namespace NebulaGen
 
             if (noiseSprite.sprite == null || noiseSprite.sprite.texture.width != noiseWidth || noiseSprite.sprite.texture.height != noiseHeight)
             {
-                Texture2D texture = NoiseToTexture2D(_noise);
+                Texture2D texture = NoiseToTexture2D(_noise, Color.white);
                 Sprite sprite = Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 50f, 0, SpriteMeshType.Tight, Vector4.zero, false);
                 noiseSprite.sprite = sprite;
             }
             else
             {
-                (noiseSprite.sprite.texture as Texture2D).SetPixels(NoiseToColor(_noise));
+                (noiseSprite.sprite.texture as Texture2D).SetPixels(NoiseToColor(_noise, Color.white));
                 (noiseSprite.sprite.texture as Texture2D).Apply();
+            }
+
+            if (maskSprite.sprite == null || maskSprite.sprite.texture.width != noiseWidth || maskSprite.sprite.texture.height != noiseHeight)
+            {
+                Texture2D texture = NoiseToTexture2D(_maskComposite, Color.red, invert: true);
+                Sprite sprite = Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 50f, 0, SpriteMeshType.Tight, Vector4.zero, false);
+                maskSprite.sprite = sprite;
+            }
+            else
+            {
+                (maskSprite.sprite.texture as Texture2D).SetPixels(NoiseToColor(_maskComposite, Color.red, invert: true));
+                (maskSprite.sprite.texture as Texture2D).Apply();
             }
         }
 
@@ -425,12 +412,6 @@ namespace NebulaGen
                 options = falloffOptions,
                 props = props,
             };
-            // NebulaJobs.CalcNoise jobNoiseC = new NebulaJobs.CalcNoise
-            // {
-            //     noise = noiseC,
-            //     options = noiseLayerC,
-            //     props = props,
-            // };
             NebulaJobs.CalcNoise jobMask1 = new NebulaJobs.CalcNoise
             {
                 noise = mask1,
@@ -447,7 +428,6 @@ namespace NebulaGen
             JobHandle handleNoiseA = jobNoiseA.Schedule(length, 1);
             JobHandle handleNoiseB = jobNoiseB.Schedule(length, 1);
             JobHandle handleNoiseFalloff = jobNoiseFalloff.Schedule(length, 1);
-            // JobHandle handleNoiseC = jobNoiseC.Schedule(length, 1);
             JobHandle handleMask1 = jobMask1.Schedule(length, 1);
             JobHandle handleMask2 = jobMask2.Schedule(length, 1);
 
@@ -515,7 +495,6 @@ namespace NebulaGen
             {
                 noiseA = noiseA,
                 noiseB = noiseB,
-                // noiseC = noiseC,
                 noise = noise,
             };
             JobHandle handleCompositeMask = jobCompositeMask.Schedule(length, 1);
@@ -556,23 +535,6 @@ namespace NebulaGen
             }
             #endregion SUBTRACTION
 
-            #region TILING
-            // if (borderMode == BorderMode.TileMirror || borderMode == BorderMode.TileStretch)
-            // {
-            //     NebulaJobs.CalcTiling jobCalcTiling = new NebulaJobs.CalcTiling
-            //     {
-            //         noise = noise,
-            //         colorLerps = colorLerps,
-            //         props = props,
-            //         tilingFill = tilingFill,
-            //         amountMirror = borderMode == BorderMode.TileMirror ? 1 : 0,
-            //         amountStretch = borderMode == BorderMode.TileStretch ? 1 : 0,
-            //     };
-            //     JobHandle handleCalcTiling = jobCalcTiling.Schedule();
-            //     handleCalcTiling.Complete();
-            // }
-            #endregion TILING
-
             for (int i = 0; i < length; i++)
             {
                 this._noise[i] = noise[i];
@@ -585,7 +547,6 @@ namespace NebulaGen
             noiseA.Dispose();
             noiseB.Dispose();
             noiseFalloff.Dispose();
-            // noiseC.Dispose();
             mask1.Dispose();
             mask2.Dispose();
             falloff.Dispose();
@@ -595,7 +556,10 @@ namespace NebulaGen
         void CalcPixels()
         {
             InitNoise(ref _noise);
+            InitNoise(ref _maskComposite);
+            InitColorLerps(ref _colorLerps);
             InitPixels(ref _pixels);
+
             int length = width * height;
             int noiseLength = noiseWidth * noiseHeight;
             Assert.AreEqual(_pixels.Length, length);
@@ -746,17 +710,16 @@ namespace NebulaGen
             Assert.AreEqual(_colorLerps.Length, noiseWidth * noiseHeight);
         }
 
-        Color[] NoiseToColor(float[] noise)
+        Color[] NoiseToColor(float[] noise, Color color, bool invert = false)
         {
             Color[] colors = new Color[noise.Length];
-            // NormalizeNoise(ref noise, 0f, 1f);
             for (int i = 0; i < noise.Length; i++)
             {
                 colors[i] = new Color(
-                    noise[i],
-                    noise[i],
-                    noise[i],
-                    1f
+                    (invert ? 1 - noise[i] : noise[i]) * color.r,
+                    (invert ? 1 - noise[i] : noise[i]) * color.g,
+                    (invert ? 1 - noise[i] : noise[i]) * color.b,
+                    (invert ? 1 - noise[i] : 1) * color.a
                 );
             }
             return colors;
@@ -779,9 +742,9 @@ namespace NebulaGen
             return colors;
         }
 
-        Texture2D NoiseToTexture2D(float[] noise)
+        Texture2D NoiseToTexture2D(float[] noise, Color color, bool invert = false)
         {
-            Color[] colors = NoiseToColor(noise);
+            Color[] colors = NoiseToColor(noise, color, invert);
             return ColorToTexture2D(colors);
         }
 
