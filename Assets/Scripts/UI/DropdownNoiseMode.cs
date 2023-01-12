@@ -2,24 +2,18 @@ using UnityEngine;
 
 public class DropdownNoiseMode : DropdownBase
 {
-    void Start()
+    protected override System.Type GetEnumType()
     {
-        SetOptions(typeof(NebulaGen.FBMNoiseMode));
+        return typeof(NebulaGen.FBMNoiseMode);
     }
 
-    void OnEnable()
+    protected override int GetValue()
     {
-        dropdown.onValueChanged.AddListener(OnChange);
+        return (int)nebula2.noiseLayerA.noiseMode;
     }
 
-    void OnDisable()
+    protected override void OnChange(int enumValue)
     {
-        dropdown.onValueChanged.RemoveListener(OnChange);
-    }
-
-    void OnChange(int enumValue)
-    {
-        Debug.Log(System.Enum.GetName(typeof(NebulaGen.FBMNoiseMode), enumValue));
         nebula2.noiseLayerA.noiseMode = (NebulaGen.FBMNoiseMode)enumValue;
         AfterChange();
     }

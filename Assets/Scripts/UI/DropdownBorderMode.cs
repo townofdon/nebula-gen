@@ -2,22 +2,17 @@ using UnityEngine;
 
 public class DropdownBorderMode : DropdownBase
 {
-    void Start()
+    protected override System.Type GetEnumType()
     {
-        SetOptions(typeof(NebulaGen.BorderMode));
+        return typeof(NebulaGen.BorderMode);
     }
 
-    void OnEnable()
+    protected override int GetValue()
     {
-        dropdown.onValueChanged.AddListener(OnChange);
+        return (int)nebula2.borderMode;
     }
 
-    void OnDisable()
-    {
-        dropdown.onValueChanged.RemoveListener(OnChange);
-    }
-
-    void OnChange(int enumValue)
+    protected override void OnChange(int enumValue)
     {
         nebula2.SetBorderMode((NebulaGen.BorderMode)enumValue);
         AfterChange();

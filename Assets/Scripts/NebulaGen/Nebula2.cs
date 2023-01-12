@@ -219,7 +219,7 @@ namespace NebulaGen
         [Space]
 
         [Header("Border")]
-        [SerializeField] BorderMode borderMode = BorderMode.FalloffBox;
+        [SerializeField] public BorderMode borderMode = BorderMode.FalloffBox;
         [SerializeField][Range(0f, 50f)] public float edgeDistance = 5f;
         [SerializeField][Range(0f, 1000f)] public float edgeFalloff = 5f;
         [SerializeField][Range(0f, 1000f)] public float edgeCutStrength = 5f;
