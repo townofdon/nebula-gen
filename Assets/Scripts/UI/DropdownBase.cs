@@ -11,6 +11,7 @@ public abstract class DropdownBase : MonoBehaviour
     TextMeshProUGUI initialOptionText;
 
     string[] options;
+    string[] excluded;
     TMPro.TMP_Dropdown dropdown;
     protected Nebula2 nebula2;
 
@@ -57,9 +58,20 @@ public abstract class DropdownBase : MonoBehaviour
         options = System.Enum.GetNames(enumType);
         for (int i = 0; i < options.Length; i++)
         {
+            if (IsOptionExcluded(options[i])) continue;
             dropdown.options.Add(new TMP_Dropdown.OptionData(options[i]));
         }
         UpdateOptionDisplayValue();
+    }
+
+    bool IsOptionExcluded(string option)
+    {
+        if (excluded == null) excluded = GetExcludedEnumNames();
+        for (int i = 0; i < excluded.Length; i++)
+        {
+            if (excluded[i] == option) return true;
+        }
+        return false;
     }
 
     void OnReinitializeFields()
@@ -68,6 +80,8 @@ public abstract class DropdownBase : MonoBehaviour
     }
 
     protected abstract System.Type GetEnumType();
+
+    protected abstract string[] GetExcludedEnumNames();
 
     protected abstract int GetValue();
 

@@ -7,6 +7,14 @@ public class DropdownNoiseType : DropdownBase
         return typeof(NebulaGen.NoiseType);
     }
 
+    protected override string[] GetExcludedEnumNames()
+    {
+        return new string[] {
+            System.Enum.GetName(typeof(NebulaGen.NoiseType), NebulaGen.NoiseType.Voronoi1),
+            System.Enum.GetName(typeof(NebulaGen.NoiseType), NebulaGen.NoiseType.Voronoi2)
+        };
+    }
+
     protected override int GetValue()
     {
         return (int)nebula2.noiseLayerA.noiseType;

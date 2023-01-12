@@ -2,14 +2,18 @@ using UnityEngine;
 
 public class FieldPerlinFactor : FieldBase
 {
+    // note - make sure the slider min/max matches these values
+    private const float MIN = 0.01f;
+    private const float MAX = 5f;
+
     protected override float GetInitialValue()
     {
-        return nebula2.noiseLayerA.perlinFactor;
+        return Mathf.Lerp(MIN, MAX, Easing.InQuadInverse(Mathf.InverseLerp(MIN, MAX, nebula2.noiseLayerA.perlinFactor)));
     }
 
     protected override void OnValueChanged(float incoming)
     {
-        nebula2.noiseLayerA.perlinFactor = incoming;
+        nebula2.noiseLayerA.perlinFactor = Mathf.Lerp(MIN, MAX, Easing.InQuad(Mathf.InverseLerp(MIN, MAX, incoming)));
         AfterChange();
     }
 }

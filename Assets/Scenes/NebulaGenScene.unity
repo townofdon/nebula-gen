@@ -2623,7 +2623,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1380606465916683780, guid: 4987f2ae4948845acb52b66d5ad14307, type: 3}
       propertyPath: m_MaxValue
-      value: 30
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 1380606465916683781, guid: 4987f2ae4948845acb52b66d5ad14307, type: 3}
       propertyPath: m_Pivot.x
@@ -11995,8 +11995,8 @@ MonoBehaviour:
     maxCutoff: 1
     perlinFactor: 0.3
     perlinOffset:
-      x: 15
-      y: 15
+      x: 10
+      y: 10
     voronoiAngleOffset: 5
     voronoiCellDensity: 30
     octaves: 8
@@ -12774,7 +12774,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1380606465916683780, guid: 4987f2ae4948845acb52b66d5ad14307, type: 3}
       propertyPath: m_MaxValue
-      value: 30
+      value: 20
       objectReference: {fileID: 0}
     - target: {fileID: 1380606465916683781, guid: 4987f2ae4948845acb52b66d5ad14307, type: 3}
       propertyPath: m_Pivot.x

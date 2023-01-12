@@ -7,6 +7,11 @@ public class DropdownBorderMode : DropdownBase
         return typeof(NebulaGen.BorderMode);
     }
 
+    protected override string[] GetExcludedEnumNames()
+    {
+        return new string[0];
+    }
+
     protected override int GetValue()
     {
         return (int)nebula2.borderMode;
