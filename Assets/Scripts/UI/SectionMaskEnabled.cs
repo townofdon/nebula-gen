@@ -1,10 +1,8 @@
 using UnityEngine;
 using NebulaGen;
 
-public class SectionBorderMode : MonoBehaviour
+public class SectionMaskEnabled : MonoBehaviour
 {
-    [SerializeField] BorderMode[] borderModes;
-
     Nebula2 nebula2;
 
     void Awake()
@@ -12,22 +10,22 @@ public class SectionBorderMode : MonoBehaviour
         nebula2 = FindObjectOfType<Nebula2>();
         // Event callbacks are defined in Awake,OnDestroy instead of OnEnable,OnDisable
         // so that the events can continue to be called even when this GO is inactive/disabled.
-        nebula2.OnBorderModeChange += OnBorderModeChange;
+        nebula2.OnMaskEnabledChange += OnMaskEnabledChange;
     }
 
     void Start()
     {
-        OnBorderModeChange(nebula2.CurrentBorderMode);
+        OnMaskEnabledChange(nebula2.IsMaskEnabled);
     }
 
     void OnDestroy()
     {
-        nebula2.OnBorderModeChange -= OnBorderModeChange;
+        nebula2.OnMaskEnabledChange -= OnMaskEnabledChange;
     }
 
-    void OnBorderModeChange(BorderMode incoming)
+    void OnMaskEnabledChange(bool enabled)
     {
-        if (ContainsBorderMode(incoming))
+        if (enabled)
         {
             Activate();
         }
@@ -35,15 +33,6 @@ public class SectionBorderMode : MonoBehaviour
         {
             Deactivate();
         }
-    }
-
-    bool ContainsBorderMode(BorderMode incoming)
-    {
-        for (int i = 0; i < borderModes.Length; i++)
-        {
-            if (incoming == borderModes[i]) return true;
-        }
-        return false;
     }
 
     void Activate()

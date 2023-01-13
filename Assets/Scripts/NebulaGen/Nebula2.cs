@@ -7,6 +7,9 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Assertions;
 
+// MASK FIELDS
+// - [ ] 
+
 // TODO
 // - [ ] Add mask fields
 // - [ ] Fix bug: turning mask on/off causes weirdness - seems to be related to non-standard canvas size
@@ -92,7 +95,6 @@ namespace NebulaGen
         [Space]
 
         [Header("Noise")]
-        [SerializeField] bool debugCompositeNoise = false;
         [SerializeField]
         public NoiseOptions noiseLayerA = new NoiseOptions
         {
@@ -140,7 +142,6 @@ namespace NebulaGen
 
         [Header("Mask")]
 
-        [SerializeField] bool debugMasks = false;
         [SerializeField][Range(0, 1)] float maskSelectPoint = 0.4f;
         [SerializeField][Range(0, 1)] float maskFalloff = 0.1f;
         [SerializeField]
@@ -288,6 +289,15 @@ namespace NebulaGen
         {
             borderMode = incoming;
             OnBorderModeChange?.Invoke(incoming);
+        }
+
+        public Action<bool> OnMaskEnabledChange;
+        public bool IsMaskEnabled => mixMask > 0;
+
+        public void SetMaskEnabled(bool enabled)
+        {
+            mixMask = enabled ? 1 : 0;
+            OnMaskEnabledChange?.Invoke(enabled);
         }
 
         public void GenerateNoise()
