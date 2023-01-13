@@ -103,22 +103,6 @@ namespace NebulaGen
         const int NOISE_BUFFER = 1000;
 
         [BurstCompile]
-        public struct CalcCompositeMask : IJobParallelFor
-        {
-            [ReadOnly] public NativeArray<float> mask1;
-            [ReadOnly] public NativeArray<float> mask2;
-            [ReadOnly] public float maskSelectPoint;
-            [ReadOnly] public float maskFalloff;
-
-            public NativeArray<float> mask;
-
-            public void Execute(int current)
-            {
-                mask[current] = MaskSelect(0f, mask1[current], mask2[current], maskSelectPoint, maskFalloff);
-            }
-        }
-
-        [BurstCompile]
         public struct CalcCompositeNoise : IJobParallelFor
         {
             [ReadOnly] public NativeArray<float> noiseA;
@@ -131,6 +115,28 @@ namespace NebulaGen
             {
                 // noise[current] = noiseA[current] + noiseB[current] + noiseC[current];
                 noise[current] = noiseA[current] + noiseB[current];
+            }
+        }
+
+        [BurstCompile]
+        public struct CalcCompositeMask : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<float> mask1;
+            [ReadOnly] public NativeArray<float> mask2;
+            [ReadOnly] public NativeArray<float> falloff;
+            [ReadOnly] public float maskSelectPoint;
+            [ReadOnly] public float maskFalloff;
+            [ReadOnly] public float maskSoftness;
+
+            public NativeArray<float> mask;
+
+            public void Execute(int current)
+            {
+                // float b = 1 - ((1 - mask1[current]) * falloff[current]);
+                float b = mask1[current];
+                // float selector = 1 - ((1 - mask2[current]) * falloff[current]);
+                float selector = mask2[current] * falloff[current];
+                mask[current] = MaskSelect(maskSoftness, b, selector, maskSelectPoint, maskFalloff);
             }
         }
 
@@ -483,6 +489,10 @@ namespace NebulaGen
             [ReadOnly] public float edgeVarianceEffect;
             [ReadOnly] public float edgeVarianceStrength;
 
+            // [ReadOnly] public float mixMask;
+            // [ReadOnly] public float maskSelectPoint;
+            // [ReadOnly] public float maskFalloff;
+
             [ReadOnly] public NativeArray<float> noise;
             [ReadOnly] public NativeArray<float> noiseFalloff;
             public NativeArray<float> falloff;
@@ -496,6 +506,14 @@ namespace NebulaGen
                 distanceToEdge -= edgeCut * edgeCutStrength;
                 distanceToEdge -= getVariance(current, edgeVarianceStrength, 1 - getDistanceMul(distanceToEdge, edgeVarianceEffect));
                 falloff[current] = getDistanceMul(distanceToEdge, edgeFalloff);
+                // float secondaryEdge = getDistanceMul(distanceToEdge * 5f, edgeFalloff * 5f);
+                // secondaryEdge = falloff[current];
+                // float t = math.clamp(mixMask * (1 - (int)falloff[current]), 0, 1);
+                // float a = math.lerp(falloff[current], 0f, t);
+                // float b = math.lerp(falloff[current], secondaryEdge, t);
+                // float selector = getDistanceMul(distanceToEdge, edgeFalloff) * 0.75f + noiseFalloff[current] * 0.25f;
+                // // float selector = getDistanceMul(distanceToEdge, 150f * (1 - maskFalloff)) * 0.75f + noiseFalloff[current] * 0.25f;
+                // falloff[current] = MaskSelect(a, b, selector, math.sqrt(maskSelectPoint), maskFalloff);
             }
 
             // return a float between 0-1 where 0 => closest to edge, 1 => furthest from edge

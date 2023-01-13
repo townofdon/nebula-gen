@@ -8,7 +8,18 @@ using UnityEngine;
 using UnityEngine.Assertions;
 
 // MASK FIELDS
-// - [ ] 
+// - [ ] RANDOMIZE
+// - [x] Mask select point
+// - [x] Mask falloff
+// - [ ] Mask Layer A/B: Noise Type
+// - [ ] Mask Layer A/B: Noise Mode
+// - [ ] Mask Layer A/B: perlinFactor (frequency)
+// - [ ] Mask Layer A/B: perlinOffset (offset)
+// - [ ] Mask Layer A/B: octaves
+// - [ ] Mask Layer A/B: lacunarity
+// - [ ] Mask Layer A/B: persistence
+// - [ ] Mask Layer A/B: domainShiftPasses
+// - [ ] Mask Layer A/B: domainShiftAmount
 
 // TODO
 // - [ ] Add mask fields
@@ -142,10 +153,11 @@ namespace NebulaGen
 
         [Header("Mask")]
 
-        [SerializeField][Range(0, 1)] float maskSelectPoint = 0.4f;
-        [SerializeField][Range(0, 1)] float maskFalloff = 0.1f;
+        [SerializeField][Range(0, 1)] public float maskSelectPoint = 0.4f;
+        [SerializeField][Range(0, 1)] public float maskFalloff = 0.1f;
+        [SerializeField][Range(0, 1)] public float maskSoftness = 0.1f;
         [SerializeField]
-        NoiseOptions maskLayerA = new NoiseOptions
+        public NoiseOptions maskLayerA = new NoiseOptions
         {
             noiseMode = FBMNoiseMode.Default,
             minCutoff = 0.2f,
@@ -161,7 +173,7 @@ namespace NebulaGen
             lacunarity = 2.0f,
         };
         [SerializeField]
-        NoiseOptions maskLayerB = new NoiseOptions
+        public NoiseOptions maskLayerB = new NoiseOptions
         {
             noiseMode = FBMNoiseMode.Default,
             minCutoff = 0.2f,
@@ -245,8 +257,6 @@ namespace NebulaGen
         float[] _noise;
         float[] _maskComposite;
         float2[] _colorLerps;
-        bool shouldFalloff;
-        NoiseOptions options = new NoiseOptions();
 
         bool shouldGenerate;
         float timeElapsedSinceGenerating = float.MaxValue;
@@ -261,7 +271,6 @@ namespace NebulaGen
             minCutoff = 0,
             maxCutoff = 1,
         };
-
 
         public Action<ColorPalette.Palette> OnPaletteChange;
         public ColorPalette.Palette MainPalette => paletteMain;
@@ -294,10 +303,10 @@ namespace NebulaGen
         public Action<bool> OnMaskEnabledChange;
         public bool IsMaskEnabled => mixMask > 0;
 
-        public void SetMaskEnabled(bool enabled)
+        public void SetMaskEnabled(float value)
         {
-            mixMask = enabled ? 1 : 0;
-            OnMaskEnabledChange?.Invoke(enabled);
+            mixMask = value;
+            OnMaskEnabledChange?.Invoke(value > 0);
         }
 
         public void GenerateNoise()
@@ -518,6 +527,9 @@ namespace NebulaGen
                 edgeCutStrength = edgeCutStrength,
                 edgeVarianceEffect = edgeVarianceEffect,
                 edgeVarianceStrength = edgeVarianceStrength,
+                // mixMask = mixMask,
+                // maskSelectPoint = maskSelectPoint,
+                // maskFalloff = maskFalloff,
             };
             JobHandle handleFalloff = jobFalloff.Schedule(length, 1);
             handleFalloff.Complete();
@@ -528,8 +540,10 @@ namespace NebulaGen
             {
                 mask1 = mask1,
                 mask2 = mask2,
+                falloff = falloff,
                 maskSelectPoint = maskSelectPoint,
                 maskFalloff = maskFalloff,
+                maskSoftness = maskSoftness,
                 mask = mask,
             };
             NebulaJobs.CalcCompositeNoise jobCompositeNoise = new NebulaJobs.CalcCompositeNoise
@@ -571,7 +585,11 @@ namespace NebulaGen
             for (int i = 0; i < length; i++)
             {
                 float mod = Mathf.Lerp(1f, mask[i], mixMask);
-                float val = outputCurve.Evaluate(noise[i]) * mod * Mathf.Clamp01(falloff[i]);
+                float val = outputCurve.Evaluate(noise[i]) * Mathf.Clamp01(falloff[i]);
+                // MULTIPLY
+                val *= mod;
+                // SUBTRACT
+                // val = Mathf.Clamp01(val - (1 - mod));
                 noise[i] = val <= blackPoint ? 0f : val;
             }
             #endregion SUBTRACTION

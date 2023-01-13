@@ -25,9 +25,6 @@ public class MainTabs : MonoBehaviour
     public void ChangeTab(TabType tab)
     {
         if (tab == currentTab) return;
-
-        Debug.Log(Enum.GetName(typeof(TabType), tab));
-
         currentTab = tab;
         if (OnTabChange != null) OnTabChange.Invoke(tab);
     }

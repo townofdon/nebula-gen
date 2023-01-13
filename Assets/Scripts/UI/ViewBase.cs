@@ -6,6 +6,7 @@ using UnityEngine.Assertions;
 public abstract class ViewBase : MonoBehaviour
 {
     [SerializeField] TabType tabType;
+    [SerializeField] public bool activateOnAwake = true;
 
     protected MainTabs tabs;
     protected Nebula2 nebula2;
