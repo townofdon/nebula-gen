@@ -1,12 +1,16 @@
-using System;
 using NebulaGen;
 using UnityEngine;
-using UnityEngine.Assertions;
+using UnityEngine.UI;
 
 public abstract class ViewBase : MonoBehaviour
 {
     [SerializeField] TabType tabType;
     [SerializeField] public bool activateOnAwake = true;
+
+    [Space]
+    [Space]
+
+    [SerializeField] ScrollRect scrollRect;
 
     protected MainTabs tabs;
     protected Nebula2 nebula2;
@@ -94,7 +98,7 @@ public abstract class ViewBase : MonoBehaviour
             currentFieldIndex = i;
             if (fields[currentFieldIndex].interactable)
             {
-                fields[currentFieldIndex].Select();
+                FocusOn(fields[currentFieldIndex]);
                 return;
             }
         }
@@ -109,9 +113,16 @@ public abstract class ViewBase : MonoBehaviour
             if (currentFieldIndex == -1) currentFieldIndex = fields.Length - 1;
             if (fields[currentFieldIndex].interactable)
             {
-                fields[currentFieldIndex].Select();
+                FocusOn(fields[currentFieldIndex]);
                 return;
             }
         }
+    }
+
+    void FocusOn(FocusableField field)
+    {
+        field.Select();
+        // source: https://stackoverflow.com/questions/30766020/how-to-scroll-to-a-specific-element-in-scrollrect-with-unity-ui
+        scrollRect.content.localPosition = scrollRect.GetSnapToPositionToBringChildIntoView(field.GetRectTransform());
     }
 }

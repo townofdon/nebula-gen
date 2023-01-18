@@ -274,17 +274,21 @@ PrefabInstance:
       propertyPath: m_AnchorMin.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8575708956114653252, guid: 0e3ed083046954e039c73b236bcdc41f, type: 3}
+      propertyPath: m_TagString
+      value: ScrollViewContent
+      objectReference: {fileID: 0}
     - target: {fileID: 8575708956114653259, guid: 0e3ed083046954e039c73b236bcdc41f, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -0.000045776367
       objectReference: {fileID: 0}
     - target: {fileID: 8575708956480656029, guid: 0e3ed083046954e039c73b236bcdc41f, type: 3}
       propertyPath: m_Size
-      value: 0.24549353
+      value: 0.43744606
       objectReference: {fileID: 0}
     - target: {fileID: 8575708956480656029, guid: 0e3ed083046954e039c73b236bcdc41f, type: 3}
       propertyPath: m_Value
-      value: 1
+      value: 1.0000001
       objectReference: {fileID: 0}
     - target: {fileID: 8575708957245297977, guid: 0e3ed083046954e039c73b236bcdc41f, type: 3}
       propertyPath: m_AnchorMax.x
