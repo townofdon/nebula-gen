@@ -7,26 +7,40 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Assertions;
 
+// PRESET TEXTURE
+// - [ ] Add Texture selection modal - see below
+// - [x] Add CustomTexture noise type
+// - [x] Control scaling {float} && offset {Vector2} - update material block (or just material)
+// - [ ] Bypass jobs when using custom texture
+
+// TEXTURE SELECTION MODAL
+// - [ ] Categories at top
+// - [ ] Thumbnail strip (scrollable - horizontal)
+// - [ ] Preview of selected
+
 // MASK FIELDS
+// NOTE - just update the FieldNoiseType etc. to be able to select which noise we're updating, e.g. noiseLayerA, noiseLayerB, maskLayerA, etc.
 // - [ ] RANDOMIZE
 // - [x] Mask select point
 // - [x] Mask falloff
-// - [ ] Mask Layer A/B: Noise Type
-// - [ ] Mask Layer A/B: Noise Mode
-// - [ ] Mask Layer A/B: perlinFactor (frequency)
-// - [ ] Mask Layer A/B: perlinOffset (offset)
-// - [ ] Mask Layer A/B: octaves
-// - [ ] Mask Layer A/B: lacunarity
-// - [ ] Mask Layer A/B: persistence
-// - [ ] Mask Layer A/B: domainShiftPasses
-// - [ ] Mask Layer A/B: domainShiftAmount
+// - [ ] Mask Layer B: Noise Type
+// - [ ] Mask Layer B: Noise Mode
+// - [ ] Mask Layer B: perlinFactor (frequency)
+// - [ ] Mask Layer B: perlinOffset (offset)
+// - [ ] Mask Layer B: octaves
+// - [ ] Mask Layer B: lacunarity
+// - [ ] Mask Layer B: persistence
+// - [ ] Mask Layer B: domainShiftPasses
+// - [ ] Mask Layer B: domainShiftAmount
 
 // TODO
 // - [ ] Add mask fields
+// - [ ] Add focus outline for checkbox/toggle component
 // - [ ] Fix bug: turning mask on/off causes weirdness - seems to be related to non-standard canvas size
 // - [ ] Add exciting fancy noise textures
 // - [ ] Change ColorPalette to ScriptableObject
 // - [ ] Add more color palettes
+// - [ ] Add custom texture border falloffs (star pattern, diamond, etc.)
 // - [ ] add file section?? -> save icon in bottom-right corner, with tooltip
 // - [ ] add help section - instructions, keyboard shortcuts
 // - [ ] add download button
@@ -91,6 +105,15 @@ namespace NebulaGen
         [SerializeField] SpriteRenderer outputSprite;
         [SerializeField][Range(0f, 2f)] float repaintDelay = 0.2f;
         [SerializeField][Range(0f, 2f)] float redrawDelay = 0.2f;
+        [SerializeField][Range(0f, 2f)] float calcCustomTexturesDelay = 0.2f;
+
+        [Space]
+        [Space]
+
+        [Header("Custom Textures")]
+        [SerializeField] CustomNoiseTexture customTextureNoise;
+        [SerializeField] CustomNoiseTexture customTextureMask;
+        [SerializeField] CustomNoiseTexture customTextureBorder;
 
         [Space]
         [Space]
@@ -99,8 +122,10 @@ namespace NebulaGen
         [SerializeField] public int sizeX = 480;
         [SerializeField] public int sizeY = 480;
 
-        const int noiseWidth = 480;
-        const int noiseHeight = 480;
+        public const int noiseWidth = 480;
+        public const int noiseHeight = 480;
+        public const float noiseWidthQuotient = 1f / 480;
+        public const float noiseHeightQuotient = 1f / 480;
 
         [Space]
         [Space]
@@ -250,19 +275,26 @@ namespace NebulaGen
         [SerializeField] bool enableDithering = true;
         [SerializeField][Range(0f, 1f)] float ditherThreshold = 0.25f;
 
-        int width;
-        int height;
+        int pixelWidth;
+        int pixelHeight;
 
         Color[] _pixels;
         float[] _noise;
         float[] _maskComposite;
         float2[] _colorLerps;
 
+        float[] _customSourceNoise;
+        float[] _customSourceMask;
+        float[] _customSourceBorder;
+
         bool shouldGenerate;
         float timeElapsedSinceGenerating = float.MaxValue;
 
         bool shouldDraw;
         float timeElapsedSinceDrawing = float.MaxValue;
+
+        bool shouldCalcCustomTextures;
+        float timeElapsedSinceCalcCustomTextures = float.MaxValue;
 
         NoiseOptions defaultNoiseOptions = new NoiseOptions
         {
@@ -319,6 +351,11 @@ namespace NebulaGen
             shouldDraw = true;
         }
 
+        public void CalculateCustomTextures()
+        {
+            shouldCalcCustomTextures = true;
+        }
+
         void Start()
         {
             shouldGenerate = true;
@@ -327,8 +364,23 @@ namespace NebulaGen
 
         void Update()
         {
+            Init();
+            TryCalcCustomTextures();
             TryGenerate();
             TryDrawOutput();
+        }
+
+        void Init()
+        {
+            pixelWidth = sizeX;
+            pixelHeight = sizeY;
+            InitNoise(ref _customSourceNoise);
+            InitNoise(ref _customSourceMask);
+            InitNoise(ref _customSourceBorder);
+            InitNoise(ref _noise);
+            InitNoise(ref _maskComposite);
+            InitPixels(ref _pixels);
+            InitColorLerps(ref _colorLerps);
         }
 
         void TryGenerate()
@@ -349,10 +401,27 @@ namespace NebulaGen
             timeElapsedSinceDrawing = 0f;
         }
 
+        void TryCalcCustomTextures()
+        {
+            if (!shouldCalcCustomTextures) return;
+            if (timeElapsedSinceCalcCustomTextures < calcCustomTexturesDelay) return;
+            shouldCalcCustomTextures = false;
+            CalculateCustomTexturesImpl();
+            timeElapsedSinceCalcCustomTextures = 0f;
+        }
+
         void LateUpdate()
         {
             timeElapsedSinceGenerating += Time.deltaTime;
             timeElapsedSinceDrawing += Time.deltaTime;
+            timeElapsedSinceCalcCustomTextures += Time.deltaTime;
+        }
+
+        void CalculateCustomTexturesImpl()
+        {
+            // TODO: COPY TEXTURE INFO TO RESPECTIVE ARRAY, RESCALING TO 480x480
+
+            customTextureNoise.GetNoiseArray(ref _customSourceNoise);
         }
 
         void GenerateNoiseImpl()
@@ -361,7 +430,7 @@ namespace NebulaGen
             if (noiseSprite.sprite == null || noiseSprite.sprite.texture.width != noiseWidth || noiseSprite.sprite.texture.height != noiseHeight)
             {
                 Texture2D texture = NoiseToTexture2D(_noise, Color.white);
-                Sprite sprite = Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 50f, 0, SpriteMeshType.Tight, Vector4.zero, false);
+                Sprite sprite = Sprite.Create(texture, new Rect(0, 0, pixelWidth, pixelHeight), new Vector2(0.5f, 0.5f), 50f, 0, SpriteMeshType.Tight, Vector4.zero, false);
                 noiseSprite.sprite = sprite;
             }
             else
@@ -373,7 +442,7 @@ namespace NebulaGen
             if (maskSprite.sprite == null || maskSprite.sprite.texture.width != noiseWidth || maskSprite.sprite.texture.height != noiseHeight)
             {
                 Texture2D texture = NoiseToTexture2D(_maskComposite, Color.red, invert: true);
-                Sprite sprite = Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 50f, 0, SpriteMeshType.Tight, Vector4.zero, false);
+                Sprite sprite = Sprite.Create(texture, new Rect(0, 0, pixelWidth, pixelHeight), new Vector2(0.5f, 0.5f), 50f, 0, SpriteMeshType.Tight, Vector4.zero, false);
                 maskSprite.sprite = sprite;
             }
             else
@@ -385,21 +454,19 @@ namespace NebulaGen
 
         void DrawOutputImpl()
         {
-            width = sizeX;
-            height = sizeY;
             CalcPixels();
-            Assert.AreEqual(_pixels.Length, width * height);
-            if (outputSprite.sprite == null || outputSprite.sprite.texture.width != width || outputSprite.sprite.texture.height != height)
+            Assert.AreEqual(_pixels.Length, pixelWidth * pixelHeight);
+            if (outputSprite.sprite == null || outputSprite.sprite.texture.width != pixelWidth || outputSprite.sprite.texture.height != pixelHeight)
             {
                 // gen new backgrouns
-                Color[] blackPixels = new Color[width * height];
+                Color[] blackPixels = new Color[pixelWidth * pixelHeight];
                 for (int i = 0; i < blackPixels.Length; i++) blackPixels[i] = new Color(0, 0, 0, 1);
                 Texture2D bgTexture = ColorToTexture2D(blackPixels);
-                Sprite bg = Sprite.Create(bgTexture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 50f, 0, SpriteMeshType.Tight, Vector4.zero, false);
+                Sprite bg = Sprite.Create(bgTexture, new Rect(0, 0, pixelWidth, pixelHeight), new Vector2(0.5f, 0.5f), 50f, 0, SpriteMeshType.Tight, Vector4.zero, false);
                 bgSprite.sprite = bg;
                 // apply colors
                 Texture2D texture = ColorToTexture2D(_pixels);
-                Sprite sprite = Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 50f, 0, SpriteMeshType.Tight, Vector4.zero, false);
+                Sprite sprite = Sprite.Create(texture, new Rect(0, 0, pixelWidth, pixelHeight), new Vector2(0.5f, 0.5f), 50f, 0, SpriteMeshType.Tight, Vector4.zero, false);
                 outputSprite.sprite = sprite;
             }
             else
@@ -411,11 +478,6 @@ namespace NebulaGen
 
         void CalcNoise()
         {
-            InitNoise(ref _noise);
-            InitNoise(ref _maskComposite);
-            InitColorLerps(ref _colorLerps);
-            InitPixels(ref _pixels);
-
             JobProps props = new JobProps
             {
                 width = noiseWidth,
@@ -584,12 +646,12 @@ namespace NebulaGen
             #region SUBTRACTION
             for (int i = 0; i < length; i++)
             {
-                float mod = Mathf.Lerp(1f, mask[i], mixMask);
+                float mod = Mathf.Lerp(1f, mask[i], mixMask) * _customSourceNoise[i];
                 float val = outputCurve.Evaluate(noise[i]) * Mathf.Clamp01(falloff[i]);
-                // MULTIPLY
                 val *= mod;
-                // SUBTRACT
-                // val = Mathf.Clamp01(val - (1 - mod));
+
+                // TODO: REMOVE
+                val = _customSourceNoise[i];
                 noise[i] = val <= blackPoint ? 0f : val;
             }
             #endregion SUBTRACTION
@@ -614,18 +676,13 @@ namespace NebulaGen
 
         void CalcPixels()
         {
-            InitNoise(ref _noise);
-            InitNoise(ref _maskComposite);
-            InitColorLerps(ref _colorLerps);
-            InitPixels(ref _pixels);
-
-            int length = width * height;
+            int length = pixelWidth * pixelHeight;
             int noiseLength = noiseWidth * noiseHeight;
             Assert.AreEqual(_pixels.Length, length);
             JobProps props = new JobProps
             {
-                width = width,
-                height = height,
+                width = pixelWidth,
+                height = pixelHeight,
             };
 
             NativeArray<float> noise = new NativeArray<float>(noiseLength, Allocator.TempJob);
@@ -708,7 +765,7 @@ namespace NebulaGen
 
         void CalcFinalColorPass()
         {
-            int length = width * height;
+            int length = pixelWidth * pixelHeight;
             Assert.AreEqual(_pixels.Length, length);
 
             NativeArray<float4> pixels = new NativeArray<float4>(length, Allocator.TempJob);
@@ -753,11 +810,11 @@ namespace NebulaGen
 
         void InitPixels(ref Color[] pixelsArray)
         {
-            if (pixelsArray == null || pixelsArray.Length != width * height)
+            if (pixelsArray == null || pixelsArray.Length != pixelWidth * pixelHeight)
             {
-                pixelsArray = new Color[width * height];
+                pixelsArray = new Color[pixelWidth * pixelHeight];
             }
-            Assert.AreEqual(pixelsArray.Length, width * height);
+            Assert.AreEqual(pixelsArray.Length, pixelWidth * pixelHeight);
         }
 
         void InitColorLerps(ref float2[] colorLerps)
@@ -786,7 +843,7 @@ namespace NebulaGen
 
         Texture2D ColorToTexture2D(Color[] colors)
         {
-            Texture2D texture = new Texture2D(width, height, TextureFormat.ARGB32, false);
+            Texture2D texture = new Texture2D(pixelWidth, pixelHeight, TextureFormat.ARGB32, false);
             texture.SetPixels(colors);
             texture.filterMode = FilterMode.Point;
             texture.Apply();
@@ -795,8 +852,8 @@ namespace NebulaGen
 
         Color[] Texture2DToColor(Texture2D texture)
         {
-            Assert.AreEqual(texture.width, width);
-            Assert.AreEqual(texture.height, height);
+            Assert.AreEqual(texture.width, pixelWidth);
+            Assert.AreEqual(texture.height, pixelHeight);
             Color[] colors = texture.GetPixels();
             return colors;
         }
@@ -813,6 +870,7 @@ namespace NebulaGen
         {
             shouldGenerate = true;
             shouldDraw = true;
+            shouldCalcCustomTextures = true;
         }
 
         IEnumerator CClearPrint()

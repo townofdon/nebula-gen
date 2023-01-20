@@ -24,6 +24,7 @@ namespace NebulaGen
         Simplex,
         Voronoi1,
         Voronoi2,
+        CustomTexture,
     }
 
     public enum NormalizationType
@@ -101,6 +102,37 @@ namespace NebulaGen
         const float PASS_OFFSET_X_3 = 8.3f; const float PASS_OFFSET_Y_3 = 2.8f;
         const float VORONOI_FREQ_MOD = 0.1f;
         const int NOISE_BUFFER = 1000;
+
+        [BurstCompile]
+        public struct CalcNoiseFromCustomTexture : IJobParallelFor
+        {
+            [ReadOnly] public int noiseWidth;
+            [ReadOnly] public int noiseHeight;
+            [ReadOnly] public int textureWidth;
+            [ReadOnly] public int textureHeight;
+            [ReadOnly] public float2 ratioToNoise;
+            [ReadOnly] public float offsetX;
+            [ReadOnly] public float offsetY;
+            [ReadOnly] public float scale;
+            [ReadOnly] public NativeArray<float> textureNoise;
+
+            public NativeArray<float> noise;
+
+            public void Execute(int current)
+            {
+                int x = current % noiseWidth;
+                int y = current / noiseHeight;
+                noise[x + y * Nebula2.noiseWidth] = textureNoise[GetTextureCoord(x, y)];
+            }
+
+            [BurstCompile]
+            int GetTextureCoord(int x, int y)
+            {
+                int newX = (int)math.floor((x * ratioToNoise.x + textureWidth * offsetX) * scale) % textureWidth;
+                int newY = (int)math.floor((y * ratioToNoise.y + textureHeight * offsetY) * scale) % textureHeight;
+                return newX + newY * textureWidth;
+            }
+        }
 
         [BurstCompile]
         public struct CalcCompositeNoise : IJobParallelFor
@@ -785,7 +817,6 @@ namespace NebulaGen
             switch (options.noiseType)
             {
                 case NoiseType.Perlin1:
-                default:
                     return UnityEngine.Mathf.PerlinNoise(xCoord, yCoord);
                 case NoiseType.Perlin2:
                     return noise.cnoise(new float2(xCoord, yCoord));
@@ -799,6 +830,8 @@ namespace NebulaGen
                     return GetVoronoiNoise(new float2(xCoord * VORONOI_FREQ_MOD, yCoord * VORONOI_FREQ_MOD), options.voronoiAngleOffset, options.voronoiCellDensity).output;
                 case NoiseType.Voronoi2:
                     return GetVoronoiNoise(new float2(xCoord * VORONOI_FREQ_MOD, yCoord * VORONOI_FREQ_MOD), options.voronoiAngleOffset, options.voronoiCellDensity).cells;
+                default:
+                    return 0f;
             }
         }
 
