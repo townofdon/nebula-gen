@@ -335,7 +335,7 @@ namespace NebulaGen
         public Action<bool> OnMaskEnabledChange;
         public bool IsMaskEnabled => mixMask > 0;
 
-        public void SetMaskEnabled(float value)
+        public void SetMaskMix(float value)
         {
             mixMask = value;
             OnMaskEnabledChange?.Invoke(value > 0);
@@ -646,12 +646,11 @@ namespace NebulaGen
             #region SUBTRACTION
             for (int i = 0; i < length; i++)
             {
-                float mod = Mathf.Lerp(1f, mask[i], mixMask) * _customSourceNoise[i];
+                // TODO: REMOVE
+                noise[i] = _customSourceNoise[i];
+                float mod = Mathf.Lerp(1f, mask[i], mixMask);
                 float val = outputCurve.Evaluate(noise[i]) * Mathf.Clamp01(falloff[i]);
                 val *= mod;
-
-                // TODO: REMOVE
-                val = _customSourceNoise[i];
                 noise[i] = val <= blackPoint ? 0f : val;
             }
             #endregion SUBTRACTION

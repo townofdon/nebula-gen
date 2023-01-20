@@ -49,7 +49,7 @@ public abstract class FieldBase : MonoBehaviour
     {
         if (input) input.text = GetInitialValue().ToString();
         if (slider) slider.value = GetInitialValue();
-        if (toggle) toggle.isOn = GetInitialValue() > 0;
+        if (toggle) toggle.isOn = GetInitialValue() > float.Epsilon;
     }
 
     void OnReinitializeFields()
