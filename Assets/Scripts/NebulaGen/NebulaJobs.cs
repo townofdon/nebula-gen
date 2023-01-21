@@ -22,9 +22,9 @@ namespace NebulaGen
         Worley1,
         Worley2,
         Simplex,
+        CustomTexture,
         Voronoi1,
         Voronoi2,
-        CustomTexture,
     }
 
     public enum NormalizationType

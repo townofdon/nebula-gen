@@ -106,7 +106,6 @@ namespace NebulaGen
         [SerializeField] SpriteRenderer outputSprite;
         [SerializeField][Range(0f, 2f)] float repaintDelay = 0.2f;
         [SerializeField][Range(0f, 2f)] float redrawDelay = 0.2f;
-        [SerializeField][Range(0f, 2f)] float calcCustomTexturesDelay = 0.2f;
 
         [Space]
         [Space]
@@ -275,9 +274,6 @@ namespace NebulaGen
         bool shouldDraw;
         float timeElapsedSinceDrawing = float.MaxValue;
 
-        bool shouldCalcCustomTextures;
-        float timeElapsedSinceCalcCustomTextures = float.MaxValue;
-
         NoiseOptions defaultNoiseOptions = new NoiseOptions
         {
             normType = NormalizationType.Truncate,
@@ -308,6 +304,9 @@ namespace NebulaGen
         public Action<BorderMode> OnBorderModeChange;
         public BorderMode CurrentBorderMode => borderMode;
 
+        public Action<NoiseType> OnNoiseTypeChange;
+        public NoiseType CurrentNoiseType => noiseOptions.noiseType;
+
         public void SetBorderMode(BorderMode incoming)
         {
             borderMode = incoming;
@@ -333,11 +332,6 @@ namespace NebulaGen
             shouldDraw = true;
         }
 
-        public void CalculateCustomTextures()
-        {
-            shouldCalcCustomTextures = true;
-        }
-
         void Start()
         {
             shouldGenerate = true;
@@ -347,7 +341,6 @@ namespace NebulaGen
         void Update()
         {
             Init();
-            TryCalcCustomTextures();
             TryGenerate();
             TryDrawOutput();
         }
@@ -383,27 +376,10 @@ namespace NebulaGen
             timeElapsedSinceDrawing = 0f;
         }
 
-        void TryCalcCustomTextures()
-        {
-            if (!shouldCalcCustomTextures) return;
-            if (timeElapsedSinceCalcCustomTextures < calcCustomTexturesDelay) return;
-            shouldCalcCustomTextures = false;
-            CalculateCustomTexturesImpl();
-            timeElapsedSinceCalcCustomTextures = 0f;
-        }
-
         void LateUpdate()
         {
             timeElapsedSinceGenerating += Time.deltaTime;
             timeElapsedSinceDrawing += Time.deltaTime;
-            timeElapsedSinceCalcCustomTextures += Time.deltaTime;
-        }
-
-        void CalculateCustomTexturesImpl()
-        {
-            // TODO: COPY TEXTURE INFO TO RESPECTIVE ARRAY, RESCALING TO 480x480
-
-            customTextureNoise.GetNoiseArray(ref _customSourceNoise);
         }
 
         void GenerateNoiseImpl()
@@ -482,13 +458,19 @@ namespace NebulaGen
             maskOptionsB.mixAmount = 1f;
             falloffOptions.mixAmount = 1f;
 
-            NebulaJobs.CalcNoiseWithColorLerps jobNoise = new NebulaJobs.CalcNoiseWithColorLerps
+            if (noiseOptions.noiseType != NoiseType.CustomTexture)
             {
-                noise = noise,
-                colorLerps = colorLerps,
-                options = noiseOptions,
-                props = props,
-            };
+                NebulaJobs.CalcNoiseWithColorLerps jobNoise = new NebulaJobs.CalcNoiseWithColorLerps
+                {
+                    noise = noise,
+                    colorLerps = colorLerps,
+                    options = noiseOptions,
+                    props = props,
+                };
+                JobHandle handleNoise = jobNoise.Schedule(length, 1);
+                handleNoise.Complete();
+            }
+
             NebulaJobs.CalcNoise jobNoiseFalloff = new NebulaJobs.CalcNoise
             {
                 noise = noiseFalloff,
@@ -508,16 +490,21 @@ namespace NebulaGen
                 props = props,
             };
 
-            JobHandle handleNoiseA = jobNoise.Schedule(length, 1);
             JobHandle handleNoiseFalloff = jobNoiseFalloff.Schedule(length, 1);
             JobHandle handleMask1 = jobMask1.Schedule(length, 1);
             JobHandle handleMask2 = jobMask2.Schedule(length, 1);
 
-            handleNoiseA.Complete();
             handleNoiseFalloff.Complete();
             handleMask1.Complete();
             handleMask2.Complete();
             #endregion NOISE_CALC
+
+            #region CUSTOM_TEXTURE
+            if (noiseOptions.noiseType == NoiseType.CustomTexture)
+            {
+                customTextureNoise.GetNoiseArray(ref noise);
+            }
+            #endregion CUSTOM_TEXTURE
 
             #region NORM_PASS_ONE
             NebulaJobs.NormalizeNoise jobNormNoise = new NebulaJobs.NormalizeNoise
@@ -530,9 +517,9 @@ namespace NebulaGen
                 noise = noiseFalloff,
                 options = falloffOptions,
             };
-            JobHandle handleNormNoiseA = jobNormNoise.Schedule();
+            JobHandle handleNormNoise = jobNormNoise.Schedule();
             JobHandle handleNormNoiseFalloff = jobNormNoiseFalloff.Schedule();
-            handleNormNoiseA.Complete();
+            handleNormNoise.Complete();
             handleNormNoiseFalloff.Complete();
             #endregion NORM_PASS_ONE
 
@@ -571,11 +558,6 @@ namespace NebulaGen
             #endregion COMPOSITING
 
             #region NORMALIZATION
-            NebulaJobs.NormalizeNoise jobNormalizeNoise = new NebulaJobs.NormalizeNoise
-            {
-                noise = noise,
-                options = defaultNoiseOptions
-            };
             NebulaJobs.NormalizeNoise jobNormalizeMask = new NebulaJobs.NormalizeNoise
             {
                 noise = mask,
@@ -585,10 +567,8 @@ namespace NebulaGen
             {
                 colorLerps = colorLerps,
             };
-            JobHandle handleNormalizeNoise = jobNormalizeNoise.Schedule();
             JobHandle handleNormalizeMask = jobNormalizeMask.Schedule();
             JobHandle handleNormalizeColorLerps = jobNormalizeColorLerps.Schedule();
-            handleNormalizeNoise.Complete();
             handleNormalizeMask.Complete();
             handleNormalizeColorLerps.Complete();
             #endregion NORMALIZATION
@@ -817,7 +797,6 @@ namespace NebulaGen
         {
             shouldGenerate = true;
             shouldDraw = true;
-            shouldCalcCustomTextures = true;
         }
 
         IEnumerator CClearPrint()

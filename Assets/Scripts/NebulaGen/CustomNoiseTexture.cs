@@ -1,5 +1,6 @@
 using NebulaGen;
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Assertions;
@@ -18,9 +19,8 @@ public class CustomNoiseTexture : MonoBehaviour, ISerializationCallbackReceiver
 
     Color[] _textureColors;
 
-    public void GetNoiseArray(ref float[] outNoise)
+    public void GetNoiseArray(ref NativeArray<float> outNoise)
     {
-        Assert.IsNotNull(outNoise);
         Assert.AreEqual(outNoise.Length, Nebula2.noiseWidth * Nebula2.noiseHeight);
         _textureColors = _texture.GetPixels();
 
@@ -47,7 +47,7 @@ public class CustomNoiseTexture : MonoBehaviour, ISerializationCallbackReceiver
         float offsetX,
         float offsetY,
         Color[] textureNoise,
-        ref float[] outNoise
+        ref NativeArray<float> outNoise
     )
     {
         float2 ratio = new float2(0, 0);
@@ -88,7 +88,6 @@ public class CustomNoiseTexture : MonoBehaviour, ISerializationCallbackReceiver
     public void OnAfterDeserialize()
     {
         if (_nebula2 == null) return;
-        _nebula2.CalculateCustomTextures();
         _nebula2.GenerateNoise();
         _nebula2.DrawOutput();
     }
