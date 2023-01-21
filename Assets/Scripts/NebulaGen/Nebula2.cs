@@ -9,16 +9,16 @@ using UnityEngine.Assertions;
 using UnityEngine.Serialization;
 
 // PRESET TEXTURE
-// - [ ] Add Modal Trigger Button - image thumbnail
-// - [ ] Add Texture selection modal - see below
+// - [x] Add Modal Trigger Button - image thumbnail
+// - [x] Add Texture selection modal - see below
 // - [x] Add CustomTexture noise type
 // - [x] Control scaling {float} && offset {Vector2} - update material block (or just material)
 // - [x] Bypass jobs when using custom texture
 
 // TEXTURE SELECTION MODAL
-// - [ ] Categories at top
-// - [ ] Thumbnail strip (scrollable - horizontal)
-// - [ ] Preview of selected
+// - [x] Categories at top
+// - [x] Thumbnail strip (scrollable - horizontal)
+// - [x] Preview of selected
 
 // MASK FIELDS
 // NOTE - just update the FieldNoiseType etc. to be able to select which noise we're updating, e.g. noiseLayerA, noiseLayerB, maskLayerA, etc.
