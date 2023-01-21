@@ -8,12 +8,12 @@ public class FieldPerlinFactor : FieldBase
 
     protected override float GetInitialValue()
     {
-        return Mathf.Lerp(MIN, MAX, Easing.InQuadInverse(Mathf.InverseLerp(MIN, MAX, nebula2.noiseLayerA.perlinFactor)));
+        return Mathf.Lerp(MIN, MAX, Easing.InQuadInverse(Mathf.InverseLerp(MIN, MAX, nebula2.noiseOptions.perlinFactor)));
     }
 
     protected override void OnValueChanged(float incoming)
     {
-        nebula2.noiseLayerA.perlinFactor = Mathf.Lerp(MIN, MAX, Easing.InQuad(Mathf.InverseLerp(MIN, MAX, incoming)));
+        nebula2.noiseOptions.perlinFactor = Mathf.Lerp(MIN, MAX, Easing.InQuad(Mathf.InverseLerp(MIN, MAX, incoming)));
         AfterChange();
     }
 }

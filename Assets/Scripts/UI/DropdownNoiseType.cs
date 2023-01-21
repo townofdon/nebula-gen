@@ -17,12 +17,12 @@ public class DropdownNoiseType : DropdownBase
 
     protected override int GetValue()
     {
-        return (int)nebula2.noiseLayerA.noiseType;
+        return (int)nebula2.noiseOptions.noiseType;
     }
 
     protected override void OnChange(int enumValue)
     {
-        nebula2.noiseLayerA.noiseType = (NebulaGen.NoiseType)enumValue;
+        nebula2.noiseOptions.noiseType = (NebulaGen.NoiseType)enumValue;
         AfterChange();
     }
 }
