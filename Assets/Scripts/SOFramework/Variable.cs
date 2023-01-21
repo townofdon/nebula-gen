@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace CyberneticStudios.SOFramework
 {
-    public abstract class Variable<T> : ScriptableObject
+    public abstract class Variable<T> : ScriptableObject, ISerializationCallbackReceiver
     {
 
 #if UNITY_EDITOR
@@ -32,5 +32,12 @@ namespace CyberneticStudios.SOFramework
             // _value = default(T);
             _value = _initialValue;
         }
+
+        public void OnAfterDeserialize()
+        {
+            OnChanged?.Invoke(_value);
+        }
+
+        public void OnBeforeSerialize() { }
     }
 }

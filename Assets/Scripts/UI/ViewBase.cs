@@ -28,6 +28,7 @@ public abstract class ViewBase : MonoBehaviour
     protected void OnEnable()
     {
         tabs.OnTabChange += OnTabChange;
+        tabs.OnTabFocus += OnTabFocus;
         input.OnTabForward += OnTabForward;
         input.OnTabBackward += OnTabBackward;
     }
@@ -35,6 +36,7 @@ public abstract class ViewBase : MonoBehaviour
     protected void OnDisable()
     {
         tabs.OnTabChange -= OnTabChange;
+        tabs.OnTabFocus -= OnTabFocus;
         input.OnTabForward -= OnTabForward;
         input.OnTabBackward -= OnTabBackward;
     }
@@ -65,6 +67,12 @@ public abstract class ViewBase : MonoBehaviour
         {
             Deactivate();
         }
+    }
+
+    void OnTabFocus(TabType incoming)
+    {
+        if (incoming != tabType) return;
+        FocusOn(fields[currentFieldIndex]);
     }
 
     void OnTabForward()

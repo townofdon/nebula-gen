@@ -9,6 +9,7 @@ using UnityEngine.Assertions;
 using UnityEngine.Serialization;
 
 // PRESET TEXTURE
+// - [ ] Add Modal Trigger Button - image thumbnail
 // - [ ] Add Texture selection modal - see below
 // - [x] Add CustomTexture noise type
 // - [x] Control scaling {float} && offset {Vector2} - update material block (or just material)
