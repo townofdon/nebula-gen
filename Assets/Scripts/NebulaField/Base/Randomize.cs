@@ -14,13 +14,13 @@ public class Randomize : MonoBehaviour
             FBMNoiseMode.Ridges,
             FBMNoiseMode.Turbulence,
         });
-        nebula2.noiseOptions.noiseType = GetRandomItem(new NoiseType[] {
+        nebula2.SetNoiseType(GetRandomItem(new NoiseType[] {
             NoiseType.Perlin1,
             NoiseType.Perlin2,
             NoiseType.Worley1,
             NoiseType.Worley2,
             NoiseType.Simplex,
-        });
+        }));
         nebula2.noiseOptions.perlinFactor = RandomFloat(0.06f, 4f);
         nebula2.noiseOptions.perlinOffset = new float2(RandomFloat(0, 20), RandomFloat(0, 20));
         nebula2.noiseOptions.octaves = RandomInt(1, 8);

@@ -12,7 +12,7 @@ using UnityEngine.Serialization;
 // - [ ] Add Texture selection modal - see below
 // - [x] Add CustomTexture noise type
 // - [x] Control scaling {float} && offset {Vector2} - update material block (or just material)
-// - [ ] Bypass jobs when using custom texture
+// - [x] Bypass jobs when using custom texture
 
 // TEXTURE SELECTION MODAL
 // - [ ] Categories at top
@@ -311,6 +311,12 @@ namespace NebulaGen
         {
             borderMode = incoming;
             OnBorderModeChange?.Invoke(incoming);
+        }
+
+        public void SetNoiseType(NoiseType incoming)
+        {
+            noiseOptions.noiseType = incoming;
+            OnNoiseTypeChange?.Invoke(incoming);
         }
 
         public Action<bool> OnMaskEnabledChange;

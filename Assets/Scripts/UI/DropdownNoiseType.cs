@@ -22,7 +22,7 @@ public class DropdownNoiseType : DropdownBase
 
     protected override void OnChange(int enumValue)
     {
-        nebula2.noiseOptions.noiseType = (NebulaGen.NoiseType)enumValue;
+        nebula2.SetNoiseType((NebulaGen.NoiseType)enumValue);
         AfterChange();
     }
 }

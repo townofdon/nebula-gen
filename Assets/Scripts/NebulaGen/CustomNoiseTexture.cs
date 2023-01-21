@@ -1,15 +1,17 @@
-using NebulaGen;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Assertions;
 
+using NebulaGen;
+using CyberneticStudios.SOFramework;
+
 public class CustomNoiseTexture : MonoBehaviour, ISerializationCallbackReceiver
 {
-    [SerializeField][Range(0.1f, 10)] public float _scale = 1f;
-    [SerializeField][Range(0, 1)] public float _offsetX = 0f;
-    [SerializeField][Range(0, 1)] public float _offsetY = 0f;
+    [SerializeField] FloatVariable _scale;
+    [SerializeField] FloatVariable _offsetX;
+    [SerializeField] FloatVariable _offsetY;
 
     Nebula2 _nebula2;
 
@@ -29,9 +31,9 @@ public class CustomNoiseTexture : MonoBehaviour, ISerializationCallbackReceiver
             textureHeight: _texture.height,
             noiseWidth: Nebula2.noiseWidth,
             noiseHeight: Nebula2.noiseHeight,
-            scale: _scale,
-            offsetX: _offsetX,
-            offsetY: _offsetY,
+            scale: _scale.value,
+            offsetX: _offsetX.value,
+            offsetY: _offsetY.value,
             textureNoise: _textureColors,
             ref outNoise
         );
@@ -79,7 +81,7 @@ public class CustomNoiseTexture : MonoBehaviour, ISerializationCallbackReceiver
     void Update()
     {
         _spriteRenderer.GetPropertyBlock(_materialBlock);
-        _materialBlock.SetVector("_MainTex_ST", new Vector4(_scale, _scale, _offsetX, _offsetY));
+        _materialBlock.SetVector("_MainTex_ST", new Vector4(_scale.value, _scale.value, _offsetX.value, _offsetY.value));
         _spriteRenderer.SetPropertyBlock(_materialBlock);
     }
 
