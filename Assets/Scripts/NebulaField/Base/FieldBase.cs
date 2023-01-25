@@ -1,7 +1,11 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using System;
+
+
+// NOTE
+// This file represents the OLD system. I kept that to reduce the amount
+// of refactoring I would have had to do.
 
 [RequireComponent(typeof(Selectable))]
 public abstract class FieldBase : MonoBehaviour

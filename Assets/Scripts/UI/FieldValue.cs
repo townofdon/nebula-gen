@@ -3,10 +3,14 @@ using UnityEngine.UI;
 using TMPro;
 using CyberneticStudios.SOFramework;
 
+// The SO Framework allows us to decouple concerns between the state
+// being updated and things that subscribe to the state update event.
+
 [RequireComponent(typeof(Selectable))]
 public class FieldValue : MonoBehaviour
 {
     [SerializeField] FloatVariable variable;
+    [SerializeField] bool initializeOnAwake = true;
 
     NebulaGen.Nebula2 nebula2;
 
@@ -38,9 +42,13 @@ public class FieldValue : MonoBehaviour
         slider = selectable as Slider;
         toggle = selectable as Toggle;
 
-        variable.ResetVariable();
-        float value = variable.value;
+        if (initializeOnAwake) variable.ResetVariable();
+        UpdateUI();
+    }
 
+    void UpdateUI()
+    {
+        float value = variable.value;
         if (input) input.text = value.ToString();
         if (slider) slider.value = value;
         if (toggle) toggle.isOn = value > float.Epsilon;
@@ -62,6 +70,7 @@ public class FieldValue : MonoBehaviour
     void OnValueChanged(float incoming)
     {
         variable.value = incoming;
+        UpdateUI();
         nebula2.GenerateNoise();
     }
 }

@@ -9,7 +9,7 @@ public class FieldDomainShiftPasses : FieldBase
 
     protected override void OnValueChanged(float incoming)
     {
-        nebula2.noiseOptions.domainShiftPasses = (int)Mathf.Clamp(incoming, 1, 3);
+        nebula2.noiseOptions.domainShiftPasses = (int)Mathf.Clamp(incoming, 0, 2);
         AfterChange();
     }
 }

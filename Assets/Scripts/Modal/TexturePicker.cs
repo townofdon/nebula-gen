@@ -39,7 +39,7 @@ public class TexturePicker : MonoBehaviour
 
     void Awake()
     {
-        var sections = GetComponentsInChildren<TexturePickerSection>();
+        var sections = GetComponentsInChildren<TexturePickerSection>(true);
         foreach (var section in sections)
         {
             section.gameObject.SetActive(true);

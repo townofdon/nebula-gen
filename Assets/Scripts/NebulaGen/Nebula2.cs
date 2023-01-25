@@ -7,6 +7,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Serialization;
+using CyberneticStudios.SOFramework;
 
 // PRESET TEXTURE
 // - [x] Add Modal Trigger Button - image thumbnail
@@ -179,6 +180,7 @@ namespace NebulaGen
             persistence = 0.5f,
             lacunarity = 2.0f,
         };
+        [HideInInspector]
         [SerializeField]
         [FormerlySerializedAs("maskLayerB")]
         public NoiseOptions maskOptionsB = new NoiseOptions
@@ -196,6 +198,12 @@ namespace NebulaGen
             persistence = 0.5f,
             lacunarity = 2.0f,
         };
+        [SerializeField] FloatVariable maskPerlinFactor;
+        [SerializeField] FloatVariable maskPerlinOffsetX;
+        [SerializeField] FloatVariable maskPerlinOffsetY;
+        [SerializeField] FloatVariable maskOctaves;
+        [SerializeField] FloatVariable maskPersistence;
+        [SerializeField] FloatVariable maskLacunarity;
 
         [Space]
         [Space]
@@ -464,6 +472,13 @@ namespace NebulaGen
             maskOptionsA.mixAmount = 1f;
             maskOptionsB.mixAmount = 1f;
             falloffOptions.mixAmount = 1f;
+            // map mask options to FloatVariables
+            maskOptionsB.perlinFactor = maskPerlinFactor.value;
+            maskOptionsB.perlinOffset.x = maskPerlinOffsetX.value;
+            maskOptionsB.perlinOffset.y = maskPerlinOffsetY.value;
+            maskOptionsB.octaves = (int)maskOctaves.value;
+            maskOptionsB.persistence = maskPersistence.value;
+            maskOptionsB.lacunarity = maskLacunarity.value;
 
             if (noiseOptions.noiseType != NoiseType.CustomTexture)
             {
