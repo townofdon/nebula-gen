@@ -20,7 +20,7 @@ public enum CustomTextureType
 
 public class TexturePicker : MonoBehaviour
 {
-    [SerializeField] Texture2DVariable textureVar;
+    [SerializeField] public Texture2DVariable textureVar;
 
     public Action<CustomTextureType> OnSelectTextureType;
 

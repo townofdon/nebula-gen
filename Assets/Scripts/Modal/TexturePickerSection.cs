@@ -61,6 +61,7 @@ public class TexturePickerSection : MonoBehaviour
             else
             {
                 images[i].gameObject.SetActive(false);
+                images[i].transform.parent.gameObject.SetActive(false);
             }
         }
     }
