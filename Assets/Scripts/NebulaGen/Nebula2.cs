@@ -43,7 +43,7 @@ using CyberneticStudios.SOFramework;
 // - [x] Add exciting fancy noise textures
 // - [ ] Change ColorPalette to ScriptableObject
 // - [ ] Add more color palettes
-// - [ ] Add specific border falloff (top, down, left, right)
+// - [x] Add specific border falloff (top, down, left, right)
 // - [ ] Add custom texture border falloffs (star pattern, diamond, etc.)
 // - [ ] add file section?? -> save icon in bottom-right corner, with tooltip
 // - [ ] add help section - instructions, keyboard shortcuts
