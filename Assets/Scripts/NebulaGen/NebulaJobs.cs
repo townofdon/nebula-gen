@@ -520,6 +520,10 @@ namespace NebulaGen
             [ReadOnly] public float edgeCutStrength;
             [ReadOnly] public float edgeVarianceEffect;
             [ReadOnly] public float edgeVarianceStrength;
+            [ReadOnly] public int falloffAddTop;
+            [ReadOnly] public int falloffAddBottom;
+            [ReadOnly] public int falloffAddLeft;
+            [ReadOnly] public int falloffAddRight;
 
             // [ReadOnly] public float mixMask;
             // [ReadOnly] public float maskSelectPoint;
@@ -570,6 +574,10 @@ namespace NebulaGen
                 float distToEdgeRight = width - current % width;
                 float distToEdgeTop = height - current / width;
                 float distToEdgeBottom = current / width;
+                distToEdgeTop = math.max(distToEdgeTop - falloffAddTop, 0);
+                distToEdgeBottom = math.max(distToEdgeBottom - falloffAddBottom, 0);
+                distToEdgeLeft = math.max(distToEdgeLeft - falloffAddLeft, 0);
+                distToEdgeRight = math.max(distToEdgeRight - falloffAddRight, 0);
                 return math.min(distToEdgeLeft,
                        math.min(distToEdgeRight,
                        math.min(distToEdgeTop, distToEdgeBottom)));
@@ -582,8 +590,8 @@ namespace NebulaGen
                 int height = props.height;
                 float maxDistance = math.min(width * 0.5f, height * 0.5f);
                 // get x and y with center as (0,0)
-                int x = (int)(current % width - width * 0.5f);
-                int y = (int)(current / width - height * 0.5f); // integer division
+                int x = (int)(current % width - width * 0.5f) + falloffAddLeft;
+                int y = (int)(current / width - height * 0.5f) + falloffAddTop;
                 float distanceToEdge = maxDistance - math.sqrt(x * x + y * y); // pythagorean theorum
                 return math.max(0f, distanceToEdge);
             }

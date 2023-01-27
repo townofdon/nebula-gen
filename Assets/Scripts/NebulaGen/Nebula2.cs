@@ -40,9 +40,10 @@ using CyberneticStudios.SOFramework;
 // - [-] Add mask fields
 // - [x] Add focus outline for checkbox/toggle component
 // - [ ] Fix bug: turning mask on/off causes weirdness - seems to be related to non-standard canvas size
-// - [ ] Add exciting fancy noise textures
+// - [x] Add exciting fancy noise textures
 // - [ ] Change ColorPalette to ScriptableObject
 // - [ ] Add more color palettes
+// - [ ] Add specific border falloff (top, down, left, right)
 // - [ ] Add custom texture border falloffs (star pattern, diamond, etc.)
 // - [ ] add file section?? -> save icon in bottom-right corner, with tooltip
 // - [ ] add help section - instructions, keyboard shortcuts
@@ -256,6 +257,10 @@ namespace NebulaGen
             persistence = 0.5f,
             lacunarity = 2.0f,
         };
+        [SerializeField] FloatVariable falloffAddLeft;
+        [SerializeField] FloatVariable falloffAddRight;
+        [SerializeField] FloatVariable falloffAddTop;
+        [SerializeField] FloatVariable falloffAddBottom;
 
         [Space]
         [Space]
@@ -559,6 +564,10 @@ namespace NebulaGen
                 edgeCutStrength = edgeCutStrength,
                 edgeVarianceEffect = edgeVarianceEffect,
                 edgeVarianceStrength = edgeVarianceStrength,
+                falloffAddTop = (int)falloffAddTop.value,
+                falloffAddBottom = (int)falloffAddBottom.value,
+                falloffAddLeft = (int)falloffAddLeft.value,
+                falloffAddRight = (int)falloffAddRight.value,
             };
             JobHandle handleFalloff = jobFalloff.Schedule(length, 1);
             handleFalloff.Complete();

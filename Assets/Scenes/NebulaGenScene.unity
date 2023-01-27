@@ -25730,6 +25730,10 @@ MonoBehaviour:
     warpAmount: 0
     warpIntensity: 0
     mixAmount: 0
+  falloffAddLeft: {fileID: 11400000, guid: 6fb37681f14eb485f81ee61d32b2d22d, type: 2}
+  falloffAddRight: {fileID: 11400000, guid: df693301999b942f68aa68cfb7cabe2d, type: 2}
+  falloffAddTop: {fileID: 11400000, guid: f011f939184a34510ad5695f6718132d, type: 2}
+  falloffAddBottom: {fileID: 11400000, guid: 4a1ca2570045646229c137201ede429e, type: 2}
   enableDithering: 1
   ditherThreshold: 0.25
 --- !u!1001 &1860312051
