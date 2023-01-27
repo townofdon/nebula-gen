@@ -28,17 +28,17 @@ using CyberneticStudios.SOFramework;
 // - [x] Mask falloff
 // - [ ] Mask Layer B: Noise Type
 // - [ ] Mask Layer B: Noise Mode
-// - [ ] Mask Layer B: perlinFactor (frequency)
-// - [ ] Mask Layer B: perlinOffset (offset)
-// - [ ] Mask Layer B: octaves
-// - [ ] Mask Layer B: lacunarity
-// - [ ] Mask Layer B: persistence
+// - [x] Mask Layer B: perlinFactor (frequency)
+// - [x] Mask Layer B: perlinOffset (offset)
+// - [x] Mask Layer B: octaves
+// - [x] Mask Layer B: lacunarity
+// - [x] Mask Layer B: persistence
 // - [ ] Mask Layer B: domainShiftPasses
 // - [ ] Mask Layer B: domainShiftAmount
 
 // TODO
-// - [ ] Add mask fields
-// - [ ] Add focus outline for checkbox/toggle component
+// - [-] Add mask fields
+// - [x] Add focus outline for checkbox/toggle component
 // - [ ] Fix bug: turning mask on/off causes weirdness - seems to be related to non-standard canvas size
 // - [ ] Add exciting fancy noise textures
 // - [ ] Change ColorPalette to ScriptableObject
