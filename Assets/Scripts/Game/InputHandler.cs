@@ -110,8 +110,8 @@ public class InputHandler : MonoBehaviour
     void HandleMove()
     {
         if (!tabs.CanUserMove) return;
-        float vertical = Input.GetAxisRaw("Vertical");
-        float horizontal = Input.GetAxisRaw("Horizontal");
+        float vertical = IsControlPressed() ? 0 : Input.GetAxisRaw("Vertical");
+        float horizontal = IsControlPressed() ? 0 : Input.GetAxisRaw("Horizontal");
         move = camera.transform.position;
         move.x += horizontal * scrollSpeed * camera.orthographicSize * Time.deltaTime;
         move.y += vertical * scrollSpeed * camera.orthographicSize * Time.deltaTime;
@@ -133,9 +133,18 @@ public class InputHandler : MonoBehaviour
 
     void HandleSave()
     {
-        bool shouldSave = Input.GetKeyDown(KeyCode.G);
+        if (tabs.CurrentTab != TabType.Main) return;
+        bool shouldSave = Input.GetKeyDown(KeyCode.S) && IsControlPressed();
         if (!shouldSave) return;
         nebula2.SaveImage();
+    }
+
+    bool IsControlPressed()
+    {
+        return Input.GetKey(KeyCode.LeftControl) ||
+        Input.GetKey(KeyCode.RightControl) ||
+        Input.GetKey(KeyCode.LeftCommand) ||
+        Input.GetKey(KeyCode.RightCommand);
     }
 
     void HandleReset()

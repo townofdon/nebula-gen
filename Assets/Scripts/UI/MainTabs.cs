@@ -23,6 +23,8 @@ public class MainTabs : MonoBehaviour
 
     TabType currentTab;
 
+    public TabType CurrentTab => currentTab;
+
     public void ChangeTab(TabType tab)
     {
         if (tab == currentTab) return;
