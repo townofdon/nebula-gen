@@ -451,16 +451,6 @@ namespace NebulaGen
                 for (int i = 0; i < noise.Length; i++)
                 {
                     noise[i] = math.lerp(0f, 1f, math.clamp(math.unlerp(min, max, noise[i]), 0, 1));
-                    // clip noise below min threshold
-                    noise[i] = math.select(noise[i], minThreshold, noise[i] < options.minCutoff);
-                    // clip noise above max threshold
-                    noise[i] = math.select(noise[i], maxThreshold, noise[i] > options.maxCutoff);
-                    // stretch values to 0-1, or truncate based on normalization type (already truncated so do nothing)
-                    noise[i] = math.select(
-                        noise[i],
-                        math.unlerp(options.minCutoff, options.maxCutoff, noise[i]),
-                        options.normType == NormalizationType.Stretch
-                    );
                     // calc different noise modes
                     turbulence = math.abs(math.lerp(-1f, 1f, math.clamp(noise[i], 0, 1)));
                     ridges = 1 - turbulence;
@@ -480,6 +470,19 @@ namespace NebulaGen
                         ),
                         inverted,
                         options.noiseMode == FBMNoiseMode.Inverted
+                    );
+                    // clip noise below min threshold
+                    noise[i] = math.select(noise[i], minThreshold, noise[i] < options.minCutoff);
+                    // above max threshold, proceed downwards
+                    float maxCutoffAmount = options.maxCutoff - (noise[i] - options.maxCutoff);
+                    noise[i] = math.select(noise[i], maxCutoffAmount, noise[i] > options.maxCutoff);
+                    // stretch values to 0-1
+                    noise[i] = math.unlerp(options.minCutoff, 1, noise[i]);
+                    // constrain values to minCutoff, maxCutoff if type Truncate
+                    noise[i] = math.select(
+                        noise[i],
+                        math.lerp(options.minCutoff, options.maxCutoff, noise[i]),
+                        options.normType == NormalizationType.Truncate
                     );
                 }
             }
