@@ -11,6 +11,7 @@ public class FieldValue : MonoBehaviour
 {
     [SerializeField] FloatVariable variable;
     [SerializeField] bool initializeOnAwake = true;
+    [SerializeField] bool drawOnChange = false;
 
     NebulaGen.Nebula2 nebula2;
 
@@ -72,5 +73,6 @@ public class FieldValue : MonoBehaviour
         variable.value = incoming;
         UpdateUI();
         nebula2.GenerateNoise();
+        if (drawOnChange) nebula2.DrawOutput();
     }
 }

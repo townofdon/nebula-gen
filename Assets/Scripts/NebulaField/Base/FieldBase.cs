@@ -51,6 +51,11 @@ public abstract class FieldBase : MonoBehaviour
 
     void Initialize()
     {
+        UpdateUI();
+    }
+
+    protected void UpdateUI()
+    {
         if (input) input.text = GetInitialValue().ToString();
         if (slider) slider.value = GetInitialValue();
         if (toggle) toggle.isOn = GetInitialValue() > float.Epsilon;

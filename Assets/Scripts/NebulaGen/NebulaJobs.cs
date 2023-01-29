@@ -535,7 +535,7 @@ namespace NebulaGen
             public void Execute(int current)
             {
                 float distanceToEdge = math.max(float.MaxValue - float.MaxValue * amountBox - float.MaxValue * amountCircle, 0);
-                float edgeCut = math.clamp(1 - noise[current], 0, 1);
+                float edgeCut = math.clamp(1 - noise[current], 0, 1) * (1 - getDistanceMul(distanceToEdge, edgeFalloff));
                 distanceToEdge += getDistanceBox(current) * amountBox;
                 distanceToEdge += getDistanceCircle(current) * amountCircle;
                 distanceToEdge -= edgeCut * edgeCutStrength;

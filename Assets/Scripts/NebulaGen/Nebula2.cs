@@ -159,6 +159,8 @@ namespace NebulaGen
             warpIntensity = 1f,
             mixAmount = 1f,
         };
+        [SerializeField] FloatVariable noiseMinCutoff;
+        [SerializeField] FloatVariable noiseMaxCutoff;
 
         [Header("Mask")]
 
@@ -361,6 +363,9 @@ namespace NebulaGen
 
         void Update()
         {
+            noiseOptions.perlinOffset.x += .1f * Time.deltaTime;
+            GenerateNoise();
+            DrawOutput();
             Init();
             TryGenerate();
             TryDrawOutput();
@@ -485,6 +490,9 @@ namespace NebulaGen
             maskOptionsB.octaves = (int)maskOctaves.value;
             maskOptionsB.persistence = maskPersistence.value;
             maskOptionsB.lacunarity = maskLacunarity.value;
+            // set min, max values for noise
+            noiseOptions.minCutoff = noiseMinCutoff.value;
+            noiseOptions.maxCutoff = noiseMaxCutoff.value;
 
             if (noiseOptions.noiseType != NoiseType.CustomTexture)
             {

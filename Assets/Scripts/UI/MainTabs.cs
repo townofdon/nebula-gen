@@ -9,6 +9,7 @@ public enum TabType
     Draw,
     Help,
     Border,
+    Adjust,
 }
 
 public class MainTabs : MonoBehaviour

@@ -12,4 +12,9 @@ public class FieldPerlinOffsetX : FieldBase
         nebula2.noiseOptions.perlinOffset.x = incoming;
         AfterChange();
     }
+
+    void LateUpdate()
+    {
+        UpdateUI();
+    }
 }

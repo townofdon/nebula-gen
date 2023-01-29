@@ -15,22 +15,23 @@ namespace CyberneticStudios.SOFramework
 
         [SerializeField] private T _initialValue;
         [SerializeField] private T _value;
+        [SerializeField] private T _prevValue;
 
         public T value
         {
             get => _value;
             set
             {
+                this._prevValue = this._value;
                 this._value = value;
-
-                OnChanged?.Invoke(value);
+                if (!this._prevValue.Equals(this._value)) OnChanged?.Invoke(value);
             }
         }
 
         public void ResetVariable()
         {
             // _value = default(T);
-            _value = _initialValue;
+            value = _initialValue;
         }
 
         public void OnAfterDeserialize()
