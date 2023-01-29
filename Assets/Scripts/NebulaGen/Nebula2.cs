@@ -37,6 +37,7 @@ using CyberneticStudios.SOFramework;
 // - [ ] Mask Layer B: domainShiftAmount
 
 // TODO
+// - [ ] Add adjustment options (min/max noise val, contrast curve options)
 // - [-] Add mask fields
 // - [x] Add focus outline for checkbox/toggle component
 // - [ ] Fix bug: turning mask on/off causes weirdness - seems to be related to non-standard canvas size
@@ -49,7 +50,7 @@ using CyberneticStudios.SOFramework;
 // - [ ] add help section - instructions, keyboard shortcuts
 // - [ ] add download button
 // BACKBURNER
-// - [ ] only generate image on G press
+// - [x] only generate image on G press
 // - [ ] add drawable masking - show noise overlay with low alpha
 // DONE
 // - [x] show mask preview in red

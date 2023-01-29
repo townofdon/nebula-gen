@@ -525,10 +525,6 @@ namespace NebulaGen
             [ReadOnly] public int falloffAddLeft;
             [ReadOnly] public int falloffAddRight;
 
-            // [ReadOnly] public float mixMask;
-            // [ReadOnly] public float maskSelectPoint;
-            // [ReadOnly] public float maskFalloff;
-
             [ReadOnly] public NativeArray<float> noise;
             [ReadOnly] public NativeArray<float> noiseFalloff;
             public NativeArray<float> falloff;
@@ -542,14 +538,6 @@ namespace NebulaGen
                 distanceToEdge -= edgeCut * edgeCutStrength;
                 distanceToEdge -= getVariance(current, edgeVarianceStrength, 1 - getDistanceMul(distanceToEdge, edgeVarianceEffect));
                 falloff[current] = getDistanceMul(distanceToEdge, edgeFalloff);
-                // float secondaryEdge = getDistanceMul(distanceToEdge * 5f, edgeFalloff * 5f);
-                // secondaryEdge = falloff[current];
-                // float t = math.clamp(mixMask * (1 - (int)falloff[current]), 0, 1);
-                // float a = math.lerp(falloff[current], 0f, t);
-                // float b = math.lerp(falloff[current], secondaryEdge, t);
-                // float selector = getDistanceMul(distanceToEdge, edgeFalloff) * 0.75f + noiseFalloff[current] * 0.25f;
-                // // float selector = getDistanceMul(distanceToEdge, 150f * (1 - maskFalloff)) * 0.75f + noiseFalloff[current] * 0.25f;
-                // falloff[current] = MaskSelect(a, b, selector, math.sqrt(maskSelectPoint), maskFalloff);
             }
 
             // return a float between 0-1 where 0 => closest to edge, 1 => furthest from edge
