@@ -1,15 +1,29 @@
 using UnityEngine;
 
-public class FieldLacunarity : FieldBase
+public class FieldLacunarity : NoiseLayerFieldBase
 {
     protected override float GetInitialValue()
     {
-        return nebula2.noiseOptions.lacunarity;
+        if (noiseLayer == NoiseLayer.A)
+        {
+            return nebula2.noiseOptionsA.lacunarity;
+        }
+        else
+        {
+            return nebula2.noiseOptionsB.lacunarity;
+        }
     }
 
     protected override void OnValueChanged(float incoming)
     {
-        nebula2.noiseOptions.lacunarity = incoming;
+        if (noiseLayer == NoiseLayer.A)
+        {
+            nebula2.noiseOptionsA.lacunarity = incoming;
+        }
+        else
+        {
+            nebula2.noiseOptionsB.lacunarity = incoming;
+        }
         AfterChange();
     }
 }

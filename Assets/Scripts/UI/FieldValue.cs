@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Serialization;
 using TMPro;
 using CyberneticStudios.SOFramework;
 
@@ -9,7 +10,10 @@ using CyberneticStudios.SOFramework;
 [RequireComponent(typeof(Selectable))]
 public class FieldValue : MonoBehaviour
 {
-    [SerializeField] FloatVariable variable;
+    [FormerlySerializedAs("variable")]
+    [Tooltip("The first non-null var ref below will take precedence")]
+    [SerializeField] FloatVariable floatVariable;
+    [SerializeField] BoolVariable boolVariable;
     [SerializeField] bool initializeOnAwake = true;
     [SerializeField] bool drawOnChange = false;
 
@@ -19,6 +23,26 @@ public class FieldValue : MonoBehaviour
     TMP_InputField input;
     Slider slider;
     Toggle toggle;
+
+    float GetValue()
+    {
+        return boolVariable != null ? (boolVariable.value ? 1f : 0f) :
+        (floatVariable != null ? floatVariable.value : 0f);
+    }
+
+    void SetValue(float incoming)
+    {
+        if (boolVariable != null)
+        {
+            boolVariable.value = incoming > float.Epsilon;
+            return;
+        }
+        if (floatVariable != null)
+        {
+            floatVariable.value = incoming;
+            return;
+        }
+    }
 
     void OnEnable()
     {
@@ -43,13 +67,14 @@ public class FieldValue : MonoBehaviour
         slider = selectable as Slider;
         toggle = selectable as Toggle;
 
-        if (initializeOnAwake) variable.ResetVariable();
+        if (initializeOnAwake && floatVariable != null) floatVariable.ResetVariable();
+        if (initializeOnAwake && boolVariable != null) boolVariable.ResetVariable();
         UpdateUI();
     }
 
     void UpdateUI()
     {
-        float value = variable.value;
+        float value = GetValue();
         if (input) input.text = value.ToString();
         if (slider) slider.value = value;
         if (toggle) toggle.isOn = value > float.Epsilon;
@@ -70,7 +95,7 @@ public class FieldValue : MonoBehaviour
 
     void OnValueChanged(float incoming)
     {
-        variable.value = incoming;
+        SetValue(incoming);
         UpdateUI();
         nebula2.GenerateNoise();
         if (drawOnChange) nebula2.DrawOutput();

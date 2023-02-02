@@ -1,15 +1,29 @@
 using UnityEngine;
 
-public class FieldSwirlAmount : FieldBase
+public class FieldSwirlAmount : NoiseLayerFieldBase
 {
     protected override float GetInitialValue()
     {
-        return nebula2.noiseOptions.swirlAmount;
+        if (noiseLayer == NoiseLayer.A)
+        {
+            return nebula2.noiseOptionsA.swirlAmount;
+        }
+        else
+        {
+            return nebula2.noiseOptionsB.swirlAmount;
+        }
     }
 
     protected override void OnValueChanged(float incoming)
     {
-        nebula2.noiseOptions.swirlAmount = incoming;
+        if (noiseLayer == NoiseLayer.A)
+        {
+            nebula2.noiseOptionsA.swirlAmount = incoming;
+        }
+        else
+        {
+            nebula2.noiseOptionsB.swirlAmount = incoming;
+        }
         AfterChange();
     }
 }

@@ -1,15 +1,29 @@
 using UnityEngine;
 
-public class FieldPerlinOffsetY : FieldBase
+public class FieldPerlinOffsetY : NoiseLayerFieldBase
 {
     protected override float GetInitialValue()
     {
-        return nebula2.noiseOptions.perlinOffset.y;
+        if (noiseLayer == NoiseLayer.A)
+        {
+            return nebula2.noiseOptionsA.perlinOffset.y;
+        }
+        else
+        {
+            return nebula2.noiseOptionsB.perlinOffset.y;
+        }
     }
 
     protected override void OnValueChanged(float incoming)
     {
-        nebula2.noiseOptions.perlinOffset.y = incoming;
+        if (noiseLayer == NoiseLayer.A)
+        {
+            nebula2.noiseOptionsA.perlinOffset.y = incoming;
+        }
+        else
+        {
+            nebula2.noiseOptionsB.perlinOffset.y = incoming;
+        }
         AfterChange();
     }
 }

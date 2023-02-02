@@ -8,7 +8,7 @@ public class Randomize : MonoBehaviour
 
     public void RandomizeNoise()
     {
-        nebula2.noiseOptions.noiseMode = GetRandomItem(new FBMNoiseMode[] {
+        nebula2.noiseOptionsA.noiseMode = GetRandomItem(new FBMNoiseMode[] {
             FBMNoiseMode.Default,
             FBMNoiseMode.Inverted,
             FBMNoiseMode.Ridges,
@@ -21,13 +21,13 @@ public class Randomize : MonoBehaviour
             NoiseType.Worley2,
             NoiseType.Simplex,
         }));
-        nebula2.noiseOptions.perlinFactor = RandomFloat(0.06f, 4f);
-        nebula2.noiseOptions.perlinOffset = new float2(RandomFloat(0, 20), RandomFloat(0, 20));
-        nebula2.noiseOptions.octaves = RandomInt(1, 8);
-        nebula2.noiseOptions.lacunarity = RandomFloat(1.5f, 2.5f);
-        nebula2.noiseOptions.persistence = RandomFloat(0.25f, 0.75f);
-        nebula2.noiseOptions.domainShiftPasses = RandomInt(0, 2);
-        nebula2.noiseOptions.domainShiftAmount = RandomFloat(10f, 200f);
+        nebula2.noiseOptionsA.perlinFactor = RandomFloat(0.06f, 4f);
+        nebula2.noiseOptionsA.perlinOffset = new float2(RandomFloat(0, 20), RandomFloat(0, 20));
+        nebula2.noiseOptionsA.octaves = RandomInt(1, 8);
+        nebula2.noiseOptionsA.lacunarity = RandomFloat(1.5f, 2.5f);
+        nebula2.noiseOptionsA.persistence = RandomFloat(0.25f, 0.75f);
+        nebula2.noiseOptionsA.domainShiftPasses = RandomInt(0, 2);
+        nebula2.noiseOptionsA.domainShiftAmount = RandomFloat(10f, 200f);
         AfterRandomize();
     }
 

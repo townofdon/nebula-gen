@@ -17,7 +17,7 @@ public class DropdownNoiseType : DropdownBase
 
     protected override int GetValue()
     {
-        return (int)nebula2.noiseOptions.noiseType;
+        return (int)nebula2.noiseOptionsA.noiseType;
     }
 
     protected override void OnChange(int enumValue)

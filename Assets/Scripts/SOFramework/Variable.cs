@@ -15,7 +15,8 @@ namespace CyberneticStudios.SOFramework
 
         [SerializeField] private T _initialValue;
         [SerializeField] private T _value;
-        [SerializeField] private T _prevValue;
+
+        private T _prevValue;
 
         public T value
         {

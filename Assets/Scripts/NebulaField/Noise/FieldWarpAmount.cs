@@ -1,15 +1,29 @@
 using UnityEngine;
 
-public class FieldWarpAmount : FieldBase
+public class FieldWarpAmount : NoiseLayerFieldBase
 {
     protected override float GetInitialValue()
     {
-        return nebula2.noiseOptions.warpAmount;
+        if (noiseLayer == NoiseLayer.A)
+        {
+            return nebula2.noiseOptionsA.warpAmount;
+        }
+        else
+        {
+            return nebula2.noiseOptionsB.warpAmount;
+        }
     }
 
     protected override void OnValueChanged(float incoming)
     {
-        nebula2.noiseOptions.warpAmount = incoming;
+        if (noiseLayer == NoiseLayer.A)
+        {
+            nebula2.noiseOptionsA.warpAmount = incoming;
+        }
+        else
+        {
+            nebula2.noiseOptionsB.warpAmount = incoming;
+        }
         AfterChange();
     }
 }

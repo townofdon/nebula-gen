@@ -9,50 +9,25 @@ using UnityEngine.Assertions;
 using UnityEngine.Serialization;
 using CyberneticStudios.SOFramework;
 
-// PRESET TEXTURE
-// - [x] Add Modal Trigger Button - image thumbnail
-// - [x] Add Texture selection modal - see below
-// - [x] Add CustomTexture noise type
-// - [x] Control scaling {float} && offset {Vector2} - update material block (or just material)
-// - [x] Bypass jobs when using custom texture
-
-// TEXTURE SELECTION MODAL
-// - [x] Categories at top
-// - [x] Thumbnail strip (scrollable - horizontal)
-// - [x] Preview of selected
-
-// MASK FIELDS
-// NOTE - just update the FieldNoiseType etc. to be able to select which noise we're updating, e.g. noiseLayerA, noiseLayerB, maskLayerA, etc.
-// - [ ] RANDOMIZE
-// - [x] Mask select point
-// - [x] Mask falloff
-// - [ ] Mask Layer B: Noise Type
-// - [ ] Mask Layer B: Noise Mode
-// - [x] Mask Layer B: perlinFactor (frequency)
-// - [x] Mask Layer B: perlinOffset (offset)
-// - [x] Mask Layer B: octaves
-// - [x] Mask Layer B: lacunarity
-// - [x] Mask Layer B: persistence
-// - [ ] Mask Layer B: domainShiftPasses
-// - [ ] Mask Layer B: domainShiftAmount
-
 // TODO
-// - [ ] Add adjustment options (min/max noise val, contrast curve options)
-// - [-] Add mask fields
-// - [x] Add focus outline for checkbox/toggle component
-// - [ ] Fix bug: turning mask on/off causes weirdness - seems to be related to non-standard canvas size
-// - [x] Add exciting fancy noise textures
+// - [ ] Refactor NebulaGen fields to all use FloatVariables
+// - [ ] Enable camera controls while Adjust tab active
+// - [ ] Add contrast curve options
 // - [ ] Change ColorPalette to ScriptableObject
 // - [ ] Add more color palettes
-// - [x] Add specific border falloff (top, down, left, right)
 // - [ ] Add custom texture border falloffs (star pattern, diamond, etc.)
 // - [ ] add file section?? -> save icon in bottom-right corner, with tooltip
-// - [ ] add help section - instructions, keyboard shortcuts
-// - [ ] add download button
 // BACKBURNER
+// - [ ] Fix bug: turning mask on/off causes weirdness - seems to be related to non-standard canvas size
 // - [x] only generate image on G press
 // - [ ] add drawable masking - show noise overlay with low alpha
+// - [ ] add help section - instructions, keyboard shortcuts
 // DONE
+// - [x] add download button
+// - [x] Add specific border falloff (top, down, left, right)
+// - [x] Add exciting fancy noise textures
+// - [x] Add mask fields
+// - [x] Add focus outline for checkbox/toggle component
 // - [x] show mask preview in red
 // - [x] Add octaves to falloff variance calc
 // - [x] Make current noise value factor into strength of falloff variance
@@ -137,7 +112,29 @@ namespace NebulaGen
         [Header("Noise")]
         [SerializeField]
         [FormerlySerializedAs("noiseLayerA")]
-        public NoiseOptions noiseOptions = new NoiseOptions
+        public NoiseOptions noiseOptionsA = new NoiseOptions
+        {
+            noiseMode = FBMNoiseMode.Default,
+            perlinFactor = 0.3f,
+            perlinOffset = Vector2.one * 10f,
+            voronoiAngleOffset = 0f,
+            voronoiCellDensity = 1f,
+            octaves = 8,
+            minCutoff = 0f,
+            maxCutoff = 1f,
+            initialAmp = 1f,
+            initialFreq = 1f,
+            persistence = 0.5f,
+            lacunarity = 2.0f,
+            domainShiftPasses = 0,
+            domainShiftAmount = 50f,
+            swirlAmount = 0f,
+            swirlIntensity = 1f,
+            warpAmount = 0f,
+            warpIntensity = 1f,
+            mixAmount = 1f,
+        };
+        public NoiseOptions noiseOptionsB = new NoiseOptions
         {
             noiseMode = FBMNoiseMode.Default,
             perlinFactor = 0.3f,
@@ -324,7 +321,7 @@ namespace NebulaGen
         public BorderMode CurrentBorderMode => borderMode;
 
         public Action<NoiseType> OnNoiseTypeChange;
-        public NoiseType CurrentNoiseType => noiseOptions.noiseType;
+        public NoiseType CurrentNoiseType => noiseOptionsA.noiseType;
 
         public void SetBorderMode(BorderMode incoming)
         {
@@ -334,7 +331,7 @@ namespace NebulaGen
 
         public void SetNoiseType(NoiseType incoming)
         {
-            noiseOptions.noiseType = incoming;
+            noiseOptionsA.noiseType = incoming;
             OnNoiseTypeChange?.Invoke(incoming);
         }
 
@@ -365,7 +362,7 @@ namespace NebulaGen
 
         void Update()
         {
-            noiseOptions.perlinOffset.x += .1f * Time.deltaTime;
+            noiseOptionsA.perlinOffset.x += .1f * Time.deltaTime;
             GenerateNoise();
             DrawOutput();
             Init();
@@ -481,7 +478,7 @@ namespace NebulaGen
             NativeArray<float2> colorLerps = new NativeArray<float2>(length, Allocator.TempJob);
 
             #region NOISE_CALC
-            noiseOptions.mixAmount = mixNoise;
+            noiseOptionsA.mixAmount = mixNoise;
             maskOptionsA.mixAmount = 1f;
             maskOptionsB.mixAmount = 1f;
             falloffOptions.mixAmount = 1f;
@@ -495,16 +492,16 @@ namespace NebulaGen
             maskOptionsB.domainShiftPasses = (int)maskDomainShiftPasses.value;
             maskOptionsB.domainShiftAmount = maskDomainShiftAmount.value;
             // set min, max values for noise
-            noiseOptions.minCutoff = noiseMinCutoff.value;
-            noiseOptions.maxCutoff = noiseMaxCutoff.value;
+            noiseOptionsA.minCutoff = noiseMinCutoff.value;
+            noiseOptionsA.maxCutoff = noiseMaxCutoff.value;
 
-            if (noiseOptions.noiseType != NoiseType.CustomTexture)
+            if (noiseOptionsA.noiseType != NoiseType.CustomTexture)
             {
                 NebulaJobs.CalcNoiseWithColorLerps jobNoise = new NebulaJobs.CalcNoiseWithColorLerps
                 {
                     noise = noise,
                     colorLerps = colorLerps,
-                    options = noiseOptions,
+                    options = noiseOptionsA,
                     props = props,
                 };
                 JobHandle handleNoise = jobNoise.Schedule(length, 1);
@@ -540,7 +537,7 @@ namespace NebulaGen
             #endregion NOISE_CALC
 
             #region CUSTOM_TEXTURE
-            if (noiseOptions.noiseType == NoiseType.CustomTexture)
+            if (noiseOptionsA.noiseType == NoiseType.CustomTexture)
             {
                 customTextureNoise.GetNoiseArray(ref noise);
             }
@@ -550,7 +547,7 @@ namespace NebulaGen
             NebulaJobs.NormalizeNoise jobNormNoise = new NebulaJobs.NormalizeNoise
             {
                 noise = noise,
-                options = noiseOptions,
+                options = noiseOptionsA,
             };
             NebulaJobs.NormalizeNoise jobNormNoiseFalloff = new NebulaJobs.NormalizeNoise
             {

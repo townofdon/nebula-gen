@@ -14,12 +14,12 @@ public class DropdownNoiseMode : DropdownBase
 
     protected override int GetValue()
     {
-        return (int)nebula2.noiseOptions.noiseMode;
+        return (int)nebula2.noiseOptionsA.noiseMode;
     }
 
     protected override void OnChange(int enumValue)
     {
-        nebula2.noiseOptions.noiseMode = (NebulaGen.FBMNoiseMode)enumValue;
+        nebula2.noiseOptionsA.noiseMode = (NebulaGen.FBMNoiseMode)enumValue;
         AfterChange();
     }
 }

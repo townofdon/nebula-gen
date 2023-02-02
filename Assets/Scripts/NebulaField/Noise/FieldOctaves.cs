@@ -1,15 +1,29 @@
 using UnityEngine;
 
-public class FieldOctaves : FieldBase
+public class FieldOctaves : NoiseLayerFieldBase
 {
     protected override float GetInitialValue()
     {
-        return nebula2.noiseOptions.octaves;
+        if (noiseLayer == NoiseLayer.A)
+        {
+            return nebula2.noiseOptionsA.octaves;
+        }
+        else
+        {
+            return nebula2.noiseOptionsB.octaves;
+        }
     }
 
     protected override void OnValueChanged(float incoming)
     {
-        nebula2.noiseOptions.octaves = (int)incoming;
+        if (noiseLayer == NoiseLayer.A)
+        {
+            nebula2.noiseOptionsA.octaves = (int)incoming;
+        }
+        else
+        {
+            nebula2.noiseOptionsB.octaves = (int)incoming;
+        }
         AfterChange();
     }
 }

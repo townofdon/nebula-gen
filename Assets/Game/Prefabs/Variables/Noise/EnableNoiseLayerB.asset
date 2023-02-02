@@ -9,8 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8bebf5b1c0ca84515825eebd5397853a, type: 3}
-  m_Name: OffsetY
+  m_Script: {fileID: 11500000, guid: 65c87f4b0249140fb9b41f12827a94a2, type: 3}
+  m_Name: EnableNoiseLayerB
   m_EditorClassIdentifier: 
   DeveloperDescription: 
   _initialValue: 0

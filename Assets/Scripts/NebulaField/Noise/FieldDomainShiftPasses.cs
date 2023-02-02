@@ -1,15 +1,29 @@
 using UnityEngine;
 
-public class FieldDomainShiftPasses : FieldBase
+public class FieldDomainShiftPasses : NoiseLayerFieldBase
 {
     protected override float GetInitialValue()
     {
-        return nebula2.noiseOptions.domainShiftPasses;
+        if (noiseLayer == NoiseLayer.A)
+        {
+            return nebula2.noiseOptionsA.domainShiftPasses;
+        }
+        else
+        {
+            return nebula2.noiseOptionsB.domainShiftPasses;
+        }
     }
 
     protected override void OnValueChanged(float incoming)
     {
-        nebula2.noiseOptions.domainShiftPasses = (int)Mathf.Clamp(incoming, 0, 2);
+        if (noiseLayer == NoiseLayer.A)
+        {
+            nebula2.noiseOptionsA.domainShiftPasses = (int)Mathf.Clamp(incoming, 0, 2);
+        }
+        else
+        {
+            nebula2.noiseOptionsB.domainShiftPasses = (int)Mathf.Clamp(incoming, 0, 2);
+        }
         AfterChange();
     }
 }

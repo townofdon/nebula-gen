@@ -6,7 +6,7 @@ public class FocusableField : MonoBehaviour
     Selectable selectable;
     RectTransform rectTransform;
 
-    public bool interactable => selectable.interactable && selectable.enabled && isActiveAndEnabled;
+    public bool interactable => selectable != null && selectable.interactable && selectable.enabled && isActiveAndEnabled;
 
     public RectTransform GetRectTransform()
     {
