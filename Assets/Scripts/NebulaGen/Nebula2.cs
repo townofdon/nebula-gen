@@ -208,6 +208,8 @@ namespace NebulaGen
         [SerializeField] FloatVariable maskOctaves;
         [SerializeField] FloatVariable maskPersistence;
         [SerializeField] FloatVariable maskLacunarity;
+        [SerializeField] FloatVariable maskDomainShiftPasses;
+        [SerializeField] FloatVariable maskDomainShiftAmount;
 
         [Space]
         [Space]
@@ -231,7 +233,7 @@ namespace NebulaGen
         [SerializeField][Range(0f, 1f)] float minAlpha = 0f;
         [SerializeField][Range(0f, 1f)] float brightness = 1f;
         [SerializeField][Range(1f, 10f)] float contrast = 1f;
-        [SerializeField][Range(0f, 0.5f)] float blackPoint = 0.01f;
+        [SerializeField] FloatVariable noiseBlackPoint;
 
         [Space]
         [Space]
@@ -490,6 +492,8 @@ namespace NebulaGen
             maskOptionsB.octaves = (int)maskOctaves.value;
             maskOptionsB.persistence = maskPersistence.value;
             maskOptionsB.lacunarity = maskLacunarity.value;
+            maskOptionsB.domainShiftPasses = (int)maskDomainShiftPasses.value;
+            maskOptionsB.domainShiftAmount = maskDomainShiftAmount.value;
             // set min, max values for noise
             noiseOptions.minCutoff = noiseMinCutoff.value;
             noiseOptions.maxCutoff = noiseMaxCutoff.value;
@@ -616,12 +620,11 @@ namespace NebulaGen
             #region SUBTRACTION
             for (int i = 0; i < length; i++)
             {
-                // // TODO: REMOVE
-                // noise[i] = _customSourceNoise[i];
+
                 float mod = Mathf.Lerp(1f, mask[i], mixMask);
                 float val = outputCurve.Evaluate(noise[i]) * Mathf.Clamp01(falloff[i]);
                 val *= mod;
-                noise[i] = val <= blackPoint ? 0f : val;
+                noise[i] = val <= noiseBlackPoint.value ? 0f : val;
             }
             #endregion SUBTRACTION
 
@@ -693,7 +696,7 @@ namespace NebulaGen
                 paletteHighlight2 = jobPaletteHighlight2,
                 enableDithering = (enableDithering ? 1 : 0),
                 ditherThreshold = ditherThreshold,
-                blackPoint = blackPoint,
+                blackPoint = noiseBlackPoint.value,
                 highlight1 = highlight1,
                 highlight2 = highlight2,
                 pixels = pixels,
