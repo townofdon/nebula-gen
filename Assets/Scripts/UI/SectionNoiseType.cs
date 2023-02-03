@@ -1,28 +1,27 @@
 using UnityEngine;
 using NebulaGen;
+using CyberneticStudios.SOFramework;
 
 public class SectionNoiseType : MonoBehaviour
 {
     [SerializeField] NoiseType[] noiseTypes;
-
-    Nebula2 nebula2;
+    [SerializeField] NoiseTypeVariable noiseType;
 
     void Awake()
     {
-        nebula2 = FindObjectOfType<Nebula2>();
         // Event callbacks are defined in Awake,OnDestroy instead of OnEnable,OnDisable
         // so that the events can continue to be called even when this GO is inactive/disabled.
-        nebula2.OnNoiseTypeChange += OnNoiseTypeChange;
-    }
-
-    void Start()
-    {
-        OnNoiseTypeChange(nebula2.CurrentNoiseType);
+        noiseType.OnChanged += OnNoiseTypeChange;
     }
 
     void OnDestroy()
     {
-        nebula2.OnNoiseTypeChange -= OnNoiseTypeChange;
+        noiseType.OnChanged -= OnNoiseTypeChange;
+    }
+
+    void Start()
+    {
+        OnNoiseTypeChange(noiseType.value);
     }
 
     void OnNoiseTypeChange(NoiseType incoming)

@@ -10,8 +10,9 @@ using UnityEngine.Serialization;
 using CyberneticStudios.SOFramework;
 
 // TODO
-// - [ ] Refactor NebulaGen fields to all use FloatVariables
-// - [ ] Enable camera controls while Adjust tab active
+// - [x] Refactor NebulaGen fields to all use FloatVariables
+// - [x] Add NoiseLayerB `solo` toggle option
+// - [x] Enable camera controls while Adjust tab active
 // - [ ] Add contrast curve options
 // - [ ] Change ColorPalette to ScriptableObject
 // - [ ] Add more color palettes
@@ -90,7 +91,8 @@ namespace NebulaGen
         [Space]
 
         [Header("Custom Textures")]
-        [SerializeField] CustomNoiseTexture customTextureNoise;
+        [SerializeField] CustomNoiseTexture customTextureNoiseA;
+        [SerializeField] CustomNoiseTexture customTextureNoiseB;
         [SerializeField] CustomNoiseTexture customTextureMask;
         [SerializeField] CustomNoiseTexture customTextureBorder;
 
@@ -112,6 +114,8 @@ namespace NebulaGen
         [Header("Noise")]
         [SerializeField]
         [FormerlySerializedAs("noiseLayerA")]
+
+        // TODO: REMOVE PUBLIC
         public NoiseOptions noiseOptionsA = new NoiseOptions
         {
             noiseMode = FBMNoiseMode.Default,
@@ -134,6 +138,8 @@ namespace NebulaGen
             warpIntensity = 1f,
             mixAmount = 1f,
         };
+
+        // TODO: REMOVE PUBLIC
         public NoiseOptions noiseOptionsB = new NoiseOptions
         {
             noiseMode = FBMNoiseMode.Default,
@@ -156,6 +162,39 @@ namespace NebulaGen
             warpIntensity = 1f,
             mixAmount = 1f,
         };
+        // NOISE A
+        [SerializeField] NoiseModeVariable noiseA_noiseMode;
+        [SerializeField] NoiseTypeVariable noiseA_noiseType;
+        [SerializeField] FloatVariable noiseA_perlinFactor;
+        [SerializeField] FloatVariable noiseA_perlinOffsetX;
+        [SerializeField] FloatVariable noiseA_perlinOffsetY;
+        [SerializeField] FloatVariable noiseA_octaves;
+        [SerializeField] FloatVariable noiseA_persistence;
+        [SerializeField] FloatVariable noiseA_lacunarity;
+        [SerializeField] FloatVariable noiseA_domainShiftPasses;
+        [SerializeField] FloatVariable noiseA_domainShiftAmount;
+        [SerializeField] FloatVariable noiseA_swirlAmount;
+        [SerializeField] FloatVariable noiseA_swirlIntensity;
+        [SerializeField] FloatVariable noiseA_warpAmount;
+        [SerializeField] FloatVariable noiseA_warpIntensity;
+        // NOISE B
+        [SerializeField] BoolVariable isNoiseBEnabled;
+        [SerializeField] BoolVariable isNoiseBSolo;
+        [SerializeField] FloatVariable noiseBMix;
+        [SerializeField] NoiseTypeVariable noiseB_noiseType;
+        [SerializeField] FloatVariable noiseB_perlinFactor;
+        [SerializeField] FloatVariable noiseB_perlinOffsetX;
+        [SerializeField] FloatVariable noiseB_perlinOffsetY;
+        [SerializeField] FloatVariable noiseB_octaves;
+        [SerializeField] FloatVariable noiseB_persistence;
+        [SerializeField] FloatVariable noiseB_lacunarity;
+        [SerializeField] FloatVariable noiseB_domainShiftPasses;
+        [SerializeField] FloatVariable noiseB_domainShiftAmount;
+        [SerializeField] FloatVariable noiseB_swirlAmount;
+        [SerializeField] FloatVariable noiseB_swirlIntensity;
+        [SerializeField] FloatVariable noiseB_warpAmount;
+        [SerializeField] FloatVariable noiseB_warpIntensity;
+        // applies to composite noise only
         [SerializeField] FloatVariable noiseMinCutoff;
         [SerializeField] FloatVariable noiseMaxCutoff;
 
@@ -212,7 +251,6 @@ namespace NebulaGen
         [Space]
 
         [Header("Mix")]
-        [SerializeField][Range(0f, 1f)] float mixNoise = 1f;
         [SerializeField][Range(0f, 1f)] public float mixMask = 1f;
         [SerializeField] AnimationCurve outputCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
 
@@ -320,19 +358,12 @@ namespace NebulaGen
         public Action<BorderMode> OnBorderModeChange;
         public BorderMode CurrentBorderMode => borderMode;
 
-        public Action<NoiseType> OnNoiseTypeChange;
-        public NoiseType CurrentNoiseType => noiseOptionsA.noiseType;
+        // public NoiseType CurrentNoiseType => noiseOptionsA.noiseType;
 
         public void SetBorderMode(BorderMode incoming)
         {
             borderMode = incoming;
             OnBorderModeChange?.Invoke(incoming);
-        }
-
-        public void SetNoiseType(NoiseType incoming)
-        {
-            noiseOptionsA.noiseType = incoming;
-            OnNoiseTypeChange?.Invoke(incoming);
         }
 
         public Action<bool> OnMaskEnabledChange;
@@ -362,9 +393,6 @@ namespace NebulaGen
 
         void Update()
         {
-            noiseOptionsA.perlinOffset.x += .1f * Time.deltaTime;
-            GenerateNoise();
-            DrawOutput();
             Init();
             TryGenerate();
             TryDrawOutput();
@@ -469,7 +497,8 @@ namespace NebulaGen
             };
             int length = noiseWidth * noiseHeight;
 
-            NativeArray<float> noise = new NativeArray<float>(length, Allocator.TempJob);
+            NativeArray<float> noiseA = new NativeArray<float>(length, Allocator.TempJob);
+            NativeArray<float> noiseB = new NativeArray<float>(length, Allocator.TempJob);
             NativeArray<float> mask = new NativeArray<float>(length, Allocator.TempJob);
             NativeArray<float> noiseFalloff = new NativeArray<float>(length, Allocator.TempJob);
             NativeArray<float> mask1 = new NativeArray<float>(length, Allocator.TempJob);
@@ -478,10 +507,42 @@ namespace NebulaGen
             NativeArray<float2> colorLerps = new NativeArray<float2>(length, Allocator.TempJob);
 
             #region NOISE_CALC
-            noiseOptionsA.mixAmount = mixNoise;
+            noiseOptionsA.mixAmount = (isNoiseBEnabled.value && isNoiseBSolo.value) ? 0f : 1f;
+            noiseOptionsB.mixAmount = (isNoiseBEnabled.value ? 1f : 0f) * noiseBMix.value;
+            // noiseOptionsA.mixAmount = 1f;
+            // noiseOptionsB.mixAmount = 0f;
             maskOptionsA.mixAmount = 1f;
             maskOptionsB.mixAmount = 1f;
             falloffOptions.mixAmount = 1f;
+            // map noiseA options to FloatVariables
+            noiseOptionsA.noiseMode = noiseA_noiseMode.value;
+            noiseOptionsA.noiseType = noiseA_noiseType.value;
+            noiseOptionsA.perlinFactor = noiseA_perlinFactor.value;
+            noiseOptionsA.perlinOffset.x = noiseA_perlinOffsetX.value;
+            noiseOptionsA.perlinOffset.y = noiseA_perlinOffsetY.value;
+            noiseOptionsA.octaves = (int)noiseA_octaves.value;
+            noiseOptionsA.persistence = noiseA_persistence.value;
+            noiseOptionsA.lacunarity = noiseA_lacunarity.value;
+            noiseOptionsA.domainShiftPasses = (int)noiseA_domainShiftPasses.value;
+            noiseOptionsA.domainShiftAmount = noiseA_domainShiftAmount.value;
+            noiseOptionsA.swirlAmount = noiseA_swirlAmount.value;
+            noiseOptionsA.swirlIntensity = noiseA_swirlIntensity.value;
+            noiseOptionsA.warpAmount = noiseA_warpAmount.value;
+            noiseOptionsA.warpIntensity = noiseA_warpIntensity.value;
+            // map noiseB options to FloatVariables
+            noiseOptionsB.noiseType = noiseB_noiseType.value;
+            noiseOptionsB.perlinFactor = noiseB_perlinFactor.value;
+            noiseOptionsB.perlinOffset.x = noiseB_perlinOffsetX.value;
+            noiseOptionsB.perlinOffset.y = noiseB_perlinOffsetY.value;
+            noiseOptionsB.octaves = (int)noiseB_octaves.value;
+            noiseOptionsB.persistence = noiseB_persistence.value;
+            noiseOptionsB.lacunarity = noiseB_lacunarity.value;
+            noiseOptionsB.domainShiftPasses = (int)noiseB_domainShiftPasses.value;
+            noiseOptionsB.domainShiftAmount = noiseB_domainShiftAmount.value;
+            noiseOptionsB.swirlAmount = noiseB_swirlAmount.value;
+            noiseOptionsB.swirlIntensity = noiseB_swirlIntensity.value;
+            noiseOptionsB.warpAmount = noiseB_warpAmount.value;
+            noiseOptionsB.warpIntensity = noiseB_warpIntensity.value;
             // map mask options to FloatVariables
             maskOptionsB.perlinFactor = maskPerlinFactor.value;
             maskOptionsB.perlinOffset.x = maskPerlinOffsetX.value;
@@ -499,9 +560,21 @@ namespace NebulaGen
             {
                 NebulaJobs.CalcNoiseWithColorLerps jobNoise = new NebulaJobs.CalcNoiseWithColorLerps
                 {
-                    noise = noise,
+                    noise = noiseA,
                     colorLerps = colorLerps,
                     options = noiseOptionsA,
+                    props = props,
+                };
+                JobHandle handleNoise = jobNoise.Schedule(length, 1);
+                handleNoise.Complete();
+            }
+            if (noiseOptionsB.noiseType != NoiseType.CustomTexture)
+            {
+                NebulaJobs.CalcNoiseWithColorLerps jobNoise = new NebulaJobs.CalcNoiseWithColorLerps
+                {
+                    noise = noiseB,
+                    colorLerps = colorLerps,
+                    options = noiseOptionsB,
                     props = props,
                 };
                 JobHandle handleNoise = jobNoise.Schedule(length, 1);
@@ -539,14 +612,20 @@ namespace NebulaGen
             #region CUSTOM_TEXTURE
             if (noiseOptionsA.noiseType == NoiseType.CustomTexture)
             {
-                customTextureNoise.GetNoiseArray(ref noise);
+                customTextureNoiseA.GetNoiseArray(ref noiseA, noiseOptionsA.mixAmount);
+            }
+            if (noiseOptionsB.noiseType == NoiseType.CustomTexture)
+            {
+                customTextureNoiseB.GetNoiseArray(ref noiseB, noiseOptionsB.mixAmount);
             }
             #endregion CUSTOM_TEXTURE
 
             #region NORM_PASS_ONE
-            NebulaJobs.NormalizeNoise jobNormNoise = new NebulaJobs.NormalizeNoise
+            // this combines noise A+B and normalizes the result in one fell swoop
+            NebulaJobs.NormalizeCombinedNoise jobNormNoise = new NebulaJobs.NormalizeCombinedNoise
             {
-                noise = noise,
+                noiseA = noiseA,
+                noiseB = noiseB,
                 options = noiseOptionsA,
             };
             NebulaJobs.NormalizeNoise jobNormNoiseFalloff = new NebulaJobs.NormalizeNoise
@@ -565,7 +644,7 @@ namespace NebulaGen
             {
                 falloff = falloff,
                 props = props,
-                noise = noise,
+                noise = noiseA,
                 noiseFalloff = noiseFalloff,
                 amountBox = borderMode == BorderMode.FalloffBox ? 1f : 0f,
                 amountCircle = borderMode == BorderMode.FalloffCircle ? 1f : 0f,
@@ -619,20 +698,21 @@ namespace NebulaGen
             {
 
                 float mod = Mathf.Lerp(1f, mask[i], mixMask);
-                float val = outputCurve.Evaluate(noise[i]) * Mathf.Clamp01(falloff[i]);
+                float val = outputCurve.Evaluate(noiseA[i]) * Mathf.Clamp01(falloff[i]);
                 val *= mod;
-                noise[i] = val <= noiseBlackPoint.value ? 0f : val;
+                noiseA[i] = val <= noiseBlackPoint.value ? 0f : val;
             }
             #endregion SUBTRACTION
 
             for (int i = 0; i < length; i++)
             {
-                this._noise[i] = noise[i];
+                this._noise[i] = noiseA[i];
                 this._maskComposite[i] = mask[i];
                 this._colorLerps[i] = colorLerps[i];
             }
 
-            noise.Dispose();
+            noiseA.Dispose();
+            noiseB.Dispose();
             mask.Dispose();
             noiseFalloff.Dispose();
             mask1.Dispose();

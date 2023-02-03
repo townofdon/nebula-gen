@@ -22,7 +22,7 @@ public class CustomNoiseTexture : MonoBehaviour, ISerializationCallbackReceiver
 
     Color[] _textureColors;
 
-    public void GetNoiseArray(ref NativeArray<float> outNoise)
+    public void GetNoiseArray(ref NativeArray<float> outNoise, float mixAmount)
     {
         Assert.AreEqual(outNoise.Length, Nebula2.noiseWidth * Nebula2.noiseHeight);
         _textureColors = _texture.value.GetPixels();
@@ -36,6 +36,7 @@ public class CustomNoiseTexture : MonoBehaviour, ISerializationCallbackReceiver
             offsetX: _offsetX.value,
             offsetY: _offsetY.value,
             textureNoise: _textureColors,
+            mixAmount: mixAmount,
             ref outNoise
         );
     }
@@ -50,6 +51,7 @@ public class CustomNoiseTexture : MonoBehaviour, ISerializationCallbackReceiver
         float offsetX,
         float offsetY,
         Color[] textureNoise,
+        float mixAmount,
         ref NativeArray<float> outNoise
     )
     {
@@ -64,7 +66,7 @@ public class CustomNoiseTexture : MonoBehaviour, ISerializationCallbackReceiver
                 int newX = (int)math.floor(x * ratio.x * scale + textureWidth * offsetX) % textureWidth;
                 int newY = (int)math.floor(y * ratio.y * scale + textureHeight * offsetY) % textureHeight;
                 i = newX + newY * textureWidth;
-                outNoise[x + y * noiseWidth] = textureNoise[i].r * textureNoise[i].a;
+                outNoise[x + y * noiseWidth] = textureNoise[i].r * textureNoise[i].a * mixAmount;
             }
         }
     }

@@ -487,6 +487,65 @@ namespace NebulaGen
                 }
             }
         }
+        [BurstCompile]
+        public struct NormalizeCombinedNoise : IJob
+        {
+            [ReadOnly] public NoiseOptions options;
+
+            public NativeArray<float> noiseA;
+            public NativeArray<float> noiseB;
+
+            public void Execute()
+            {
+                float min = 2f, max = 0f;
+                float turbulence = 0f, ridges = 0f, inverted = 0f;
+
+                float minThreshold = math.select(0f, options.minCutoff, options.normType == NormalizationType.Stretch);
+                float maxThreshold = math.select(1f, options.maxCutoff, options.normType == NormalizationType.Stretch);
+                for (int i = 0; i < noiseA.Length; i++)
+                {
+                    max = math.max(max, noiseA[i] + noiseB[i]);
+                    min = math.min(min, noiseA[i] + noiseB[i]);
+                }
+                for (int i = 0; i < noiseA.Length; i++)
+                {
+                    noiseA[i] = math.lerp(0f, 1f, math.clamp(math.unlerp(min, max, noiseA[i] + noiseB[i]), 0, 1));
+                    // calc different noise modes
+                    turbulence = math.abs(math.lerp(-1f, 1f, math.clamp(noiseA[i], 0, 1)));
+                    ridges = 1 - turbulence;
+                    ridges *= ridges;
+                    inverted = 1 - noiseA[i];
+                    inverted *= inverted;
+                    // this monstrosity
+                    noiseA[i] = math.select(
+                        math.select(
+                            math.select(
+                                noiseA[i],
+                                ridges,
+                                options.noiseMode == FBMNoiseMode.Ridges
+                            ),
+                            turbulence,
+                            options.noiseMode == FBMNoiseMode.Turbulence
+                        ),
+                        inverted,
+                        options.noiseMode == FBMNoiseMode.Inverted
+                    );
+                    // clip noise below min threshold
+                    noiseA[i] = math.select(noiseA[i], minThreshold, noiseA[i] < options.minCutoff);
+                    // above max threshold, proceed downwards
+                    float maxCutoffAmount = options.maxCutoff - (noiseA[i] - options.maxCutoff);
+                    noiseA[i] = math.select(noiseA[i], maxCutoffAmount, noiseA[i] > options.maxCutoff);
+                    // stretch values to 0-1
+                    noiseA[i] = math.unlerp(options.minCutoff, 1, noiseA[i]);
+                    // constrain values to minCutoff, maxCutoff if type Truncate
+                    noiseA[i] = math.select(
+                        noiseA[i],
+                        math.lerp(options.minCutoff, options.maxCutoff, noiseA[i]),
+                        options.normType == NormalizationType.Truncate
+                    );
+                }
+            }
+        }
 
         [BurstCompile]
         public struct NormalizeColorLerps : IJob

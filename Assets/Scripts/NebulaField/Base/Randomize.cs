@@ -1,33 +1,46 @@
 using UnityEngine;
 using Unity.Mathematics;
 using NebulaGen;
+using CyberneticStudios.SOFramework;
 
 public class Randomize : MonoBehaviour
 {
+    [SerializeField] NoiseModeVariable noiseMode;
+    [SerializeField] NoiseTypeVariable noiseType;
+    [SerializeField] FloatVariable perlinFactor;
+    [SerializeField] FloatVariable perlinOffsetX;
+    [SerializeField] FloatVariable perlinOffsetY;
+    [SerializeField] FloatVariable octaves;
+    [SerializeField] FloatVariable persistence;
+    [SerializeField] FloatVariable lacunarity;
+    [SerializeField] FloatVariable domainShiftPasses;
+    [SerializeField] FloatVariable domainShiftAmount;
+
     Nebula2 nebula2;
 
     public void RandomizeNoise()
     {
-        nebula2.noiseOptionsA.noiseMode = GetRandomItem(new FBMNoiseMode[] {
+        if (noiseMode != null) noiseMode.value = GetRandomItem(new FBMNoiseMode[] {
             FBMNoiseMode.Default,
             FBMNoiseMode.Inverted,
             FBMNoiseMode.Ridges,
             FBMNoiseMode.Turbulence,
         });
-        nebula2.SetNoiseType(GetRandomItem(new NoiseType[] {
+        noiseType.value = GetRandomItem(new NoiseType[] {
             NoiseType.Perlin1,
             NoiseType.Perlin2,
             NoiseType.Worley1,
             NoiseType.Worley2,
             NoiseType.Simplex,
-        }));
-        nebula2.noiseOptionsA.perlinFactor = RandomFloat(0.06f, 4f);
-        nebula2.noiseOptionsA.perlinOffset = new float2(RandomFloat(0, 20), RandomFloat(0, 20));
-        nebula2.noiseOptionsA.octaves = RandomInt(1, 8);
-        nebula2.noiseOptionsA.lacunarity = RandomFloat(1.5f, 2.5f);
-        nebula2.noiseOptionsA.persistence = RandomFloat(0.25f, 0.75f);
-        nebula2.noiseOptionsA.domainShiftPasses = RandomInt(0, 2);
-        nebula2.noiseOptionsA.domainShiftAmount = RandomFloat(10f, 200f);
+        });
+        perlinFactor.value = RandomFloat(0.06f, 4f);
+        perlinOffsetX.value = RandomFloat(0, 20);
+        perlinOffsetY.value = RandomFloat(0, 20);
+        octaves.value = RandomInt(1, 8);
+        lacunarity.value = RandomFloat(1.5f, 2.5f);
+        persistence.value = RandomFloat(0.25f, 0.75f);
+        domainShiftPasses.value = RandomInt(0, 2);
+        domainShiftAmount.value = RandomFloat(10f, 200f);
         AfterRandomize();
     }
 

@@ -35,7 +35,10 @@ public abstract class DropdownBase : MonoBehaviour
         Assert.IsNotNull(initialOption);
         initialOptionText = initialOption.GetComponent<TextMeshProUGUI>();
         Assert.IsNotNull(initialOptionText);
+        Init();
     }
+
+    protected virtual void Init() { }
 
     protected void Start()
     {

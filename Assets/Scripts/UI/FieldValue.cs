@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.Serialization;
 using TMPro;
 using CyberneticStudios.SOFramework;
+using System;
 
 // The SO Framework allows us to decouple concerns between the state
 // being updated and things that subscribe to the state update event.
@@ -12,8 +13,8 @@ public class FieldValue : MonoBehaviour
 {
     [FormerlySerializedAs("variable")]
     [Tooltip("The first non-null var ref below will take precedence")]
-    [SerializeField] FloatVariable floatVariable;
     [SerializeField] BoolVariable boolVariable;
+    [SerializeField] FloatVariable floatVariable;
     [SerializeField] bool initializeOnAwake = true;
     [SerializeField] bool drawOnChange = false;
 
@@ -49,6 +50,8 @@ public class FieldValue : MonoBehaviour
         input?.onValueChanged.AddListener(OnValueChanged);
         slider?.onValueChanged.AddListener(OnValueChanged);
         toggle?.onValueChanged.AddListener(OnValueChanged);
+        if (floatVariable != null) floatVariable.OnChanged += OnFloatVariableChanged;
+        if (boolVariable != null) boolVariable.OnChanged += OnBoolVariableChanged;
     }
 
     void OnDisable()
@@ -56,6 +59,8 @@ public class FieldValue : MonoBehaviour
         input?.onValueChanged.RemoveListener(OnValueChanged);
         slider?.onValueChanged.RemoveListener(OnValueChanged);
         toggle?.onValueChanged.RemoveListener(OnValueChanged);
+        if (floatVariable != null) floatVariable.OnChanged -= OnFloatVariableChanged;
+        if (boolVariable != null) boolVariable.OnChanged -= OnBoolVariableChanged;
     }
 
     void Awake()
@@ -78,6 +83,16 @@ public class FieldValue : MonoBehaviour
         if (input) input.text = value.ToString();
         if (slider) slider.value = value;
         if (toggle) toggle.isOn = value > float.Epsilon;
+    }
+
+    void OnBoolVariableChanged(bool incoming)
+    {
+        UpdateUI();
+    }
+
+    void OnFloatVariableChanged(float incoming)
+    {
+        UpdateUI();
     }
 
     void OnValueChanged(string incoming)
