@@ -10,13 +10,13 @@ using UnityEngine.Serialization;
 using CyberneticStudios.SOFramework;
 
 // TODO
-// - [ ] Add dithering option
+// - [x] Change to 100% opacity
+// - [x] Add dithering option
 // - [ ] Add toast when saving image
 // - [ ] Add contrast curve options
-// - [ ] Add custom texture border falloffs (star pattern, diamond, etc.)
-// - [ ] add file section?? -> save icon in bottom-right corner, with tooltip
 // - [ ] add save-file serialization && import feature
 // BACKBURNER
+// - [ ] Add custom texture border falloffs (star pattern, diamond, etc.)
 // - [ ] Change ColorPalette to ScriptableObject
 // - [ ] Fix bug: turning mask on/off causes weirdness - seems to be related to non-standard canvas size
 // - [ ] add drawable masking - show noise overlay with low alpha
@@ -309,8 +309,8 @@ namespace NebulaGen
 
         [Header("Pixel Art")]
 
-        [SerializeField] bool enableDithering = true;
-        [SerializeField][Range(0f, 1f)] float ditherThreshold = 0.25f;
+        [SerializeField] BoolVariable enableDithering;
+        [SerializeField] FloatVariable ditherThreshold;
 
         int pixelWidth;
         int pixelHeight;
@@ -773,8 +773,8 @@ namespace NebulaGen
                 paletteMain = jobPaletteMain,
                 paletteHighlight1 = jobPaletteHighlight1,
                 paletteHighlight2 = jobPaletteHighlight2,
-                enableDithering = (enableDithering ? 1 : 0),
-                ditherThreshold = ditherThreshold,
+                enableDithering = (enableDithering.value ? 1 : 0),
+                ditherThreshold = ditherThreshold.value,
                 blackPoint = noiseBlackPoint.value,
                 highlight1 = highlight1,
                 highlight2 = highlight2,
