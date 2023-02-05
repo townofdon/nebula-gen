@@ -10,8 +10,7 @@ using UnityEngine.Serialization;
 using CyberneticStudios.SOFramework;
 
 // TODO
-// - [ ] Split falloff variance into freq, strength - maybe also offset
-// - [ ] Use float vars for variance params 
+// - [x] Split falloff variance into freq, strength - maybe also offset
 // - [x] Remove old NoiseField classes
 // - [ ] Add contrast curve options
 // - [ ] Change ColorPalette to ScriptableObject
