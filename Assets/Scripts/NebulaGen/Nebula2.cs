@@ -10,19 +10,21 @@ using UnityEngine.Serialization;
 using CyberneticStudios.SOFramework;
 
 // TODO
-// - [x] Split falloff variance into freq, strength - maybe also offset
-// - [x] Remove old NoiseField classes
+// - [ ] Add toast when saving image
 // - [ ] Add contrast curve options
-// - [ ] Change ColorPalette to ScriptableObject
 // - [ ] Add more color palettes
 // - [ ] Add custom texture border falloffs (star pattern, diamond, etc.)
 // - [ ] add file section?? -> save icon in bottom-right corner, with tooltip
+// - [ ] add save-file serialization && import feature
 // BACKBURNER
+// - [ ] Change ColorPalette to ScriptableObject
 // - [ ] Fix bug: turning mask on/off causes weirdness - seems to be related to non-standard canvas size
 // - [x] only generate image on G press
 // - [ ] add drawable masking - show noise overlay with low alpha
 // - [ ] add help section - instructions, keyboard shortcuts
 // DONE
+// - [x] Split falloff variance into freq, strength - maybe also offset
+// - [x] Remove old NoiseField classes
 // - [x] Refactor NebulaGen fields to all use FloatVariables
 // - [x] Add NoiseLayerB `solo` toggle option
 // - [x] Enable camera controls while Adjust tab active
