@@ -39,9 +39,9 @@ public static class PaletteUtils
         }
         else
         {
-            byte r = byte.Parse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
-            byte g = byte.Parse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
-            byte b = byte.Parse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
+            byte r = byte.Parse(hex.Replace("#", "").Substring(0, 2), System.Globalization.NumberStyles.HexNumber);
+            byte g = byte.Parse(hex.Replace("#", "").Substring(2, 2), System.Globalization.NumberStyles.HexNumber);
+            byte b = byte.Parse(hex.Replace("#", "").Substring(4, 2), System.Globalization.NumberStyles.HexNumber);
             return new Color32(r, g, b, 255);
         }
     }
