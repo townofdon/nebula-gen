@@ -76,7 +76,8 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
 /[Aa]ssets/[Gg]enerated
-/[Aa]ssets/ThirdParty
+/[Aa]ssets/ThirdParty/*
+!/[Aa]ssets/ThirdParty/README.md
 
 **/.DS_Store
 
