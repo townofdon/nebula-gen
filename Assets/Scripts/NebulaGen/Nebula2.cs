@@ -12,7 +12,7 @@ using CyberneticStudios.SOFramework;
 // TODO
 // - [ ] Split falloff variance into freq, strength - maybe also offset
 // - [ ] Use float vars for variance params 
-// - [ ] Remove old NoiseField classes
+// - [x] Remove old NoiseField classes
 // - [ ] Add contrast curve options
 // - [ ] Change ColorPalette to ScriptableObject
 // - [ ] Add more color palettes
@@ -117,7 +117,6 @@ namespace NebulaGen
         [Header("Noise")]
         [SerializeField]
         [FormerlySerializedAs("noiseLayerA")]
-
         NoiseOptions noiseOptionsA = new NoiseOptions
         {
             noiseMode = FBMNoiseMode.Default,
