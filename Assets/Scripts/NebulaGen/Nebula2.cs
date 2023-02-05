@@ -10,9 +10,9 @@ using UnityEngine.Serialization;
 using CyberneticStudios.SOFramework;
 
 // TODO
-// - [x] Refactor NebulaGen fields to all use FloatVariables
-// - [x] Add NoiseLayerB `solo` toggle option
-// - [x] Enable camera controls while Adjust tab active
+// - [ ] Split falloff variance into freq, strength - maybe also offset
+// - [ ] Use float vars for variance params 
+// - [ ] Remove old NoiseField classes
 // - [ ] Add contrast curve options
 // - [ ] Change ColorPalette to ScriptableObject
 // - [ ] Add more color palettes
@@ -24,6 +24,9 @@ using CyberneticStudios.SOFramework;
 // - [ ] add drawable masking - show noise overlay with low alpha
 // - [ ] add help section - instructions, keyboard shortcuts
 // DONE
+// - [x] Refactor NebulaGen fields to all use FloatVariables
+// - [x] Add NoiseLayerB `solo` toggle option
+// - [x] Enable camera controls while Adjust tab active
 // - [x] add download button
 // - [x] Add specific border falloff (top, down, left, right)
 // - [x] Add exciting fancy noise textures
@@ -115,8 +118,7 @@ namespace NebulaGen
         [SerializeField]
         [FormerlySerializedAs("noiseLayerA")]
 
-        // TODO: REMOVE PUBLIC
-        public NoiseOptions noiseOptionsA = new NoiseOptions
+        NoiseOptions noiseOptionsA = new NoiseOptions
         {
             noiseMode = FBMNoiseMode.Default,
             perlinFactor = 0.3f,
@@ -139,8 +141,7 @@ namespace NebulaGen
             mixAmount = 1f,
         };
 
-        // TODO: REMOVE PUBLIC
-        public NoiseOptions noiseOptionsB = new NoiseOptions
+        NoiseOptions noiseOptionsB = new NoiseOptions
         {
             noiseMode = FBMNoiseMode.Default,
             perlinFactor = 0.3f,
