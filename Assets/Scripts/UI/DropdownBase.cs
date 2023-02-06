@@ -7,6 +7,8 @@ using System;
 [RequireComponent(typeof(TMP_Dropdown))]
 public abstract class DropdownBase : MonoBehaviour
 {
+    [SerializeField] bool drawOnChange = false;
+
     DropdownInitialOption initialOption;
     TextMeshProUGUI initialOptionText;
 
@@ -81,6 +83,7 @@ public abstract class DropdownBase : MonoBehaviour
     {
         UpdateOptionDisplayValue();
         nebula2.GenerateNoise();
+        if (drawOnChange) nebula2.DrawOutput();
     }
 
     void UpdateOptionDisplayValue()

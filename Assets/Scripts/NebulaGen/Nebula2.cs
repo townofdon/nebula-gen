@@ -260,7 +260,7 @@ namespace NebulaGen
 
         [Header("Mix")]
         [SerializeField][Range(0f, 1f)] public float mixMask = 1f;
-        [SerializeField] AnimationCurve outputCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
+        [SerializeField] AnimationCurveVariable outputCurve;
 
         [Space]
         [Space]
@@ -707,7 +707,7 @@ namespace NebulaGen
             {
 
                 float mod = Mathf.Lerp(1f, mask[i], mixMask);
-                float val = outputCurve.Evaluate(noiseA[i]) * Mathf.Clamp01(falloff[i]);
+                float val = outputCurve.value.animationCurve.Evaluate(noiseA[i]) * Mathf.Clamp01(falloff[i]);
                 val *= mod;
                 noiseA[i] = val <= noiseBlackPoint.value ? 0f : val;
             }

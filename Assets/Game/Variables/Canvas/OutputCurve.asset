@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8bebf5b1c0ca84515825eebd5397853a, type: 3}
-  m_Name: DitherThreshold
+  m_Script: {fileID: 11500000, guid: d34aa54f4e14f4e40a4f46a02f38887f, type: 3}
+  m_Name: OutputCurve
   m_EditorClassIdentifier: 
   DeveloperDescription: 
-  _initialValue: 0.15
-  _value: 0.15
+  _initialValue: {fileID: 11400000, guid: b6e14712fc4a64e61890869b9dee2042, type: 2}
+  _value: {fileID: 11400000, guid: b6e14712fc4a64e61890869b9dee2042, type: 2}
