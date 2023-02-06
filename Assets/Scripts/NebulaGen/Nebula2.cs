@@ -12,7 +12,7 @@ using CyberneticStudios.SOFramework;
 // TODO
 // - [x] Change to 100% opacity
 // - [x] Add dithering option
-// - [ ] Add toast when saving image
+// - [x] Add toast when saving image
 // - [ ] Add contrast curve options
 // - [ ] add save-file serialization && import feature
 // BACKBURNER
