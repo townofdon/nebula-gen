@@ -89,6 +89,12 @@ namespace NebulaGen
         [SerializeField] SpriteRenderer noiseSprite;
         [SerializeField] SpriteRenderer maskSprite;
         [SerializeField] SpriteRenderer outputSprite;
+        [SerializeField] Toast toastSaveSuccess;
+
+        [Space]
+        [Space]
+
+        [Header("Debouncing")]
         [SerializeField][Range(0f, 2f)] float repaintDelay = 0.2f;
         [SerializeField][Range(0f, 2f)] float redrawDelay = 0.2f;
 
@@ -347,6 +353,7 @@ namespace NebulaGen
             Debug.Log("Saving...");
             ImageUtils.SaveImage(outputSprite.sprite.texture as Texture2D);
             Debug.Log("Save Successful!");
+            toastSaveSuccess.Show();
             if (clearingPrint != null) StopCoroutine(clearingPrint);
             clearingPrint = StartCoroutine(CClearPrint());
         }
