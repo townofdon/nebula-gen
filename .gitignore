@@ -78,6 +78,8 @@ mono_crash.*.json
 
 /[Aa]ssets/[Gg]enerated
 
+/DeployScripts/webgl
+
 **/.DS_Store
 
 .env
