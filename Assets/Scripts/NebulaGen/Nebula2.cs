@@ -330,10 +330,10 @@ namespace NebulaGen
         float[] _customSourceMask;
         float[] _customSourceBorder;
 
-        bool shouldGenerate;
+        bool shouldGenerate = true;
         float timeElapsedSinceGenerating = float.MaxValue;
 
-        bool shouldDraw;
+        bool shouldDraw = true;
         float timeElapsedSinceDrawing = float.MaxValue;
 
         NoiseOptions defaultNoiseOptions = new NoiseOptions
