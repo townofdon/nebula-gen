@@ -133,7 +133,7 @@ public class InputHandler : MonoBehaviour
 
     void HandleSave()
     {
-        if (tabs.CurrentTab != TabType.Main) return;
+        if (!tabs.CanSave) return;
         bool shouldSave = Input.GetKeyDown(KeyCode.S) && IsControlPressed();
         if (!shouldSave) return;
         nebula2.SaveImage();

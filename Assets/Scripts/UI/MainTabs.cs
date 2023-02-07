@@ -21,6 +21,7 @@ public class MainTabs : MonoBehaviour
     public TabType InitialTab => initialTabSelected;
     public bool CanUserMove => currentTab == TabType.Main || currentTab == TabType.Help || currentTab == TabType.Adjust;
     public bool ShouldViewReset => currentTab == TabType.Noise || currentTab == TabType.Mask || currentTab == TabType.Draw || currentTab == TabType.Border;
+    public bool CanSave => currentTab == TabType.Main || currentTab == TabType.Help || currentTab == TabType.Adjust;
 
     TabType currentTab;
 

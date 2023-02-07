@@ -10,18 +10,18 @@ using UnityEngine.Serialization;
 using CyberneticStudios.SOFramework;
 
 // TODO
-// - [x] Change to 100% opacity
-// - [x] Add dithering option
-// - [x] Add toast when saving image
-// - [ ] Add contrast curve options
-// - [ ] add save-file serialization && import feature
 // BACKBURNER
+// - [ ] add save-file serialization && import feature
 // - [ ] Add custom texture border falloffs (star pattern, diamond, etc.)
 // - [ ] Change ColorPalette to ScriptableObject
 // - [ ] Fix bug: turning mask on/off causes weirdness - seems to be related to non-standard canvas size
 // - [ ] add drawable masking - show noise overlay with low alpha
 // - [ ] add help section - instructions, keyboard shortcuts
 // DONE
+// - [x] Add contrast curve options
+// - [x] Change to 100% opacity
+// - [x] Add dithering option
+// - [x] Add toast when saving image
 // - [x] only generate image on G press (CTRL+S)
 // - [x] Add more color palettes
 // - [x] Split falloff variance into freq, strength - maybe also offset
